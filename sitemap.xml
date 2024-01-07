@@ -2,19 +2,19 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>/multimedia/mediacodec/</loc>
+    <loc>https://zerok.github.io/multimedia/mediacodec/</loc>
     <lastmod>2024-01-07T14:38:19+08:00</lastmod>
   </url><url>
-    <loc>/multimedia/</loc>
+    <loc>https://zerok.github.io/multimedia/</loc>
     <lastmod>2024-01-07T14:38:19+08:00</lastmod>
   </url><url>
-    <loc>/</loc>
+    <loc>https://zerok.github.io/</loc>
     <lastmod>2024-01-07T14:38:19+08:00</lastmod>
   </url><url>
-    <loc>/archives/</loc>
+    <loc>https://zerok.github.io/archives/</loc>
   </url><url>
-    <loc>/categories/</loc>
+    <loc>https://zerok.github.io/categories/</loc>
   </url><url>
-    <loc>/tags/</loc>
+    <loc>https://zerok.github.io/tags/</loc>
   </url>
 </urlset>
