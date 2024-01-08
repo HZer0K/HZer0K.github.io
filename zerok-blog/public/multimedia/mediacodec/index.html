@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>MediaCodec | zerok</title>
+<meta name="keywords" content="">
+<meta name="description" content="MediaCodec视频播放流程介绍 1、MediaCodec介绍 MediaCodec 是 Android 平台提供的一个底层的音视频编解码框架，它是 Android 多媒体基础框架的重要组成部分。它经常和 MediaExtractor​​ 、MediaSync​​ 、 MediaMuxer​​ 、 MediaCrypto​​ 、 MediaDrm​​、 Image​​ 、 Surface​​ 、 Auditrack​​ 一起使用。它本身并不是 Codec，而是通过调用底层编解码组件获得Codec的能力。
+自 Android 5.0 开始，mediacodec 首选异步模式处理数据。
+当 MediaCodec 异步处理数据时，会使用一组输入和输出 Buffer 队列。通常，客户端请求将数据写入空的输入缓冲区，输入 Buffer 填满数据后，发送给 MediaCodec 进行编解码处理。之后，处理完的数据将被写到一个输出 Buffer 中。最后，由客户请求输出 Buffer，消耗输出 Buffer 中的内容，用完之后释放。
+在其生命周期中，编解码器在概念上存在于三种状态之一：Stopped, Executing 或者 Released。Stopped 状态实际上是三个状态的集合：Uninitialized, Configured 和 Error，而 Executing 状态在概念上通过三个子状态进行：Flushed, Running 和 End-of-Stream。
+2、MediaCodec视频播放流程 2、1 start流程 MediaCodecDemo
+package io.vec.demo.mediacodec; import java.nio.ByteBuffer; import android.app.Activity; import android.media.MediaCodec; import android.media.MediaCodec.BufferInfo; import android.">
+<meta name="author" content="">
+<link rel="canonical" href="https://hzer0k.github.io/multimedia/mediacodec/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.4599eadb9eb2ad3d0a8d6827b41a8fda8f2f4af226b63466c09c5fddbc8706b7.css" integrity="sha256-RZnq256yrT0KjWgntBqP2o8vSvImtjRmwJxf3byHBrc=" rel="preload stylesheet" as="style">
+<link rel="icon" href="https://hzer0k.github.io/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://hzer0k.github.io/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://hzer0k.github.io/favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://hzer0k.github.io/apple-touch-icon.png">
+<link rel="mask-icon" href="https://hzer0k.github.io/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="MediaCodec" />
+<meta property="og:description" content="MediaCodec视频播放流程介绍 1、MediaCodec介绍 MediaCodec 是 Android 平台提供的一个底层的音视频编解码框架，它是 Android 多媒体基础框架的重要组成部分。它经常和 MediaExtractor​​ 、MediaSync​​ 、 MediaMuxer​​ 、 MediaCrypto​​ 、 MediaDrm​​、 Image​​ 、 Surface​​ 、 Auditrack​​ 一起使用。它本身并不是 Codec，而是通过调用底层编解码组件获得Codec的能力。
+自 Android 5.0 开始，mediacodec 首选异步模式处理数据。
+当 MediaCodec 异步处理数据时，会使用一组输入和输出 Buffer 队列。通常，客户端请求将数据写入空的输入缓冲区，输入 Buffer 填满数据后，发送给 MediaCodec 进行编解码处理。之后，处理完的数据将被写到一个输出 Buffer 中。最后，由客户请求输出 Buffer，消耗输出 Buffer 中的内容，用完之后释放。
+在其生命周期中，编解码器在概念上存在于三种状态之一：Stopped, Executing 或者 Released。Stopped 状态实际上是三个状态的集合：Uninitialized, Configured 和 Error，而 Executing 状态在概念上通过三个子状态进行：Flushed, Running 和 End-of-Stream。
+2、MediaCodec视频播放流程 2、1 start流程 MediaCodecDemo
+package io.vec.demo.mediacodec; import java.nio.ByteBuffer; import android.app.Activity; import android.media.MediaCodec; import android.media.MediaCodec.BufferInfo; import android." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://hzer0k.github.io/multimedia/mediacodec/" /><meta property="article:section" content="multimedia" />
+<meta property="article:published_time" content="2024-01-07T14:38:19+08:00" />
+<meta property="article:modified_time" content="2024-01-07T14:38:19+08:00" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="MediaCodec"/>
+<meta name="twitter:description" content="MediaCodec视频播放流程介绍 1、MediaCodec介绍 MediaCodec 是 Android 平台提供的一个底层的音视频编解码框架，它是 Android 多媒体基础框架的重要组成部分。它经常和 MediaExtractor​​ 、MediaSync​​ 、 MediaMuxer​​ 、 MediaCrypto​​ 、 MediaDrm​​、 Image​​ 、 Surface​​ 、 Auditrack​​ 一起使用。它本身并不是 Codec，而是通过调用底层编解码组件获得Codec的能力。
+自 Android 5.0 开始，mediacodec 首选异步模式处理数据。
+当 MediaCodec 异步处理数据时，会使用一组输入和输出 Buffer 队列。通常，客户端请求将数据写入空的输入缓冲区，输入 Buffer 填满数据后，发送给 MediaCodec 进行编解码处理。之后，处理完的数据将被写到一个输出 Buffer 中。最后，由客户请求输出 Buffer，消耗输出 Buffer 中的内容，用完之后释放。
+在其生命周期中，编解码器在概念上存在于三种状态之一：Stopped, Executing 或者 Released。Stopped 状态实际上是三个状态的集合：Uninitialized, Configured 和 Error，而 Executing 状态在概念上通过三个子状态进行：Flushed, Running 和 End-of-Stream。
+2、MediaCodec视频播放流程 2、1 start流程 MediaCodecDemo
+package io.vec.demo.mediacodec; import java.nio.ByteBuffer; import android.app.Activity; import android.media.MediaCodec; import android.media.MediaCodec.BufferInfo; import android."/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "Multimedia",
+      "item": "https://hzer0k.github.io/multimedia/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  3 ,
+      "name": "MediaCodec",
+      "item": "https://hzer0k.github.io/multimedia/mediacodec/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "MediaCodec",
+  "name": "MediaCodec",
+  "description": "MediaCodec视频播放流程介绍 1、MediaCodec介绍 MediaCodec 是 Android 平台提供的一个底层的音视频编解码框架，它是 Android 多媒体基础框架的重要组成部分。它经常和 MediaExtractor​​ 、MediaSync​​ 、 MediaMuxer​​ 、 MediaCrypto​​ 、 MediaDrm​​、 Image​​ 、 Surface​​ 、 Auditrack​​ 一起使用。它本身并不是 Codec，而是通过调用底层编解码组件获得Codec的能力。\n自 Android 5.0 开始，mediacodec 首选异步模式处理数据。\n当 MediaCodec 异步处理数据时，会使用一组输入和输出 Buffer 队列。通常，客户端请求将数据写入空的输入缓冲区，输入 Buffer 填满数据后，发送给 MediaCodec 进行编解码处理。之后，处理完的数据将被写到一个输出 Buffer 中。最后，由客户请求输出 Buffer，消耗输出 Buffer 中的内容，用完之后释放。\n在其生命周期中，编解码器在概念上存在于三种状态之一：Stopped, Executing 或者 Released。Stopped 状态实际上是三个状态的集合：Uninitialized, Configured 和 Error，而 Executing 状态在概念上通过三个子状态进行：Flushed, Running 和 End-of-Stream。\n2、MediaCodec视频播放流程 2、1 start流程 MediaCodecDemo\npackage io.vec.demo.mediacodec; import java.nio.ByteBuffer; import android.app.Activity; import android.media.MediaCodec; import android.media.MediaCodec.BufferInfo; import android.",
+  "keywords": [
+    
+  ],
+  "articleBody": "MediaCodec视频播放流程介绍 1、MediaCodec介绍 MediaCodec 是 Android 平台提供的一个底层的音视频编解码框架，它是 Android 多媒体基础框架的重要组成部分。它经常和 MediaExtractor​​ 、MediaSync​​ 、 MediaMuxer​​ 、 MediaCrypto​​ 、 MediaDrm​​、 Image​​ 、 Surface​​ 、 Auditrack​​ 一起使用。它本身并不是 Codec，而是通过调用底层编解码组件获得Codec的能力。\n自 Android 5.0 开始，mediacodec 首选异步模式处理数据。\n当 MediaCodec 异步处理数据时，会使用一组输入和输出 Buffer 队列。通常，客户端请求将数据写入空的输入缓冲区，输入 Buffer 填满数据后，发送给 MediaCodec 进行编解码处理。之后，处理完的数据将被写到一个输出 Buffer 中。最后，由客户请求输出 Buffer，消耗输出 Buffer 中的内容，用完之后释放。\n在其生命周期中，编解码器在概念上存在于三种状态之一：Stopped, Executing 或者 Released。Stopped 状态实际上是三个状态的集合：Uninitialized, Configured 和 Error，而 Executing 状态在概念上通过三个子状态进行：Flushed, Running 和 End-of-Stream。\n2、MediaCodec视频播放流程 2、1 start流程 MediaCodecDemo\npackage io.vec.demo.mediacodec; import java.nio.ByteBuffer; import android.app.Activity; import android.media.MediaCodec; import android.media.MediaCodec.BufferInfo; import android.media.MediaExtractor; import android.media.MediaFormat; import android.os.Bundle; import android.os.Environment; import android.util.Log; import android.view.Surface; import android.view.SurfaceHolder; import android.view.SurfaceView; public class DecodeActivity extends Activity implements SurfaceHolder.Callback { // 获取视频文件路径 private static final String SAMPLE = Environment.getExternalStorageDirectory() + \"/video.mp4\"; // 初始化播放线程 private PlayerThread mPlayer = null; @Override protected void onCreate(Bundle savedInstanceState) { super.onCreate(savedInstanceState); SurfaceView sv = new SurfaceView(this); sv.getHolder().addCallback(this); setContentView(sv); } protected void onDestroy() { super.onDestroy(); } @Override public void surfaceCreated(SurfaceHolder holder) { } @Override public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) { if (mPlayer == null) { mPlayer = new PlayerThread(holder.getSurface()); mPlayer.start(); } } @Override public void surfaceDestroyed(SurfaceHolder holder) { if (mPlayer != null) { mPlayer.interrupt(); } } private class PlayerThread extends Thread { // MediaExtractor负责数据解析 private MediaExtractor extractor; // MediaCodec负责媒体文件的编解码工作。 private MediaCodec decoder; // 显示区域 private Surface surface; public PlayerThread(Surface surface) { this.surface = surface; } @Override public void run() { extractor = new MediaExtractor(); extractor.setDataSource(SAMPLE); // 遍历数据源音视频轨迹。 for (int i = 0; i \u003c extractor.getTrackCount(); i++) { MediaFormat format = extractor.getTrackFormat(i); String mime = format.getString(MediaFormat.KEY_MIME); if (mime.startsWith(\"video/\")) { extractor.selectTrack(i); // 根据通道类型创建解码器。 decoder = MediaCodec.createDecoderByType(mime); // 设置解码参数。 decoder.configure(format, surface, null, 0); break; } } if (decoder == null) { Log.e(\"DecodeActivity\", \"Can't find video info!\"); return; } decoder.start(); // 调用 start() 函数之后，没有异常，就表示成功创建了组件。 ByteBuffer[] inputBuffers = decoder.getInputBuffers(); ByteBuffer[] outputBuffers = decoder.getOutputBuffers(); // 每个 Buffer 的元数据包括具体范围偏移及大小， // 以及有效数据中相关解码的 Buffer。 BufferInfo info = new BufferInfo(); boolean isEOS = false; long startMs = System.currentTimeMillis(); while (!Thread.interrupted()) { // 只要线程不中断 if (!isEOS) { int inIndex = decoder.dequeueInputBuffer(10000); if (inIndex \u003e= 0) { // 根据索引得到输入缓冲区 ByteBuffer buffer = inputBuffers[inIndex]; // 检索编码样本，并从给定的索引开始将其存储在字节缓冲区中。 int sampleSize = extractor.readSampleData(buffer, 0); if (sampleSize \u003c 0) { // 此时我们不应该停止播放，只需将 EOS 标志传递给解码器， // 我们将从 dequeueOutputBuffer 中再次获取它。 Log.d(\"DecodeActivity\", \"InputBuffer BUFFER_FLAG_END_OF_STREAM\"); // 传入的参数分别为：可用缓冲区索引、 // 输入缓冲区中数据开始的字节偏移量、 // 解密所需的元数据，此调用返回后可以立即重用对象。 // 此值不能为null、 // 此缓冲区的演示时间戳（us） // 标志BUFFER_FLAG_CODEC_CONFIG和 // BUFFER-FLAG_END_of_STREAM的位掩码 decoder.queueInputBuffer(inIndex, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM); isEOS = true; } else { decoder.queueInputBuffer(inIndex, 0, sampleSize, extractor.getSampleTime(), 0); extractor.advance(); } } } // 取出输出缓冲区的队列，最多阻塞 10000us。 // 返回已成功解码的输出缓冲区索引或者INDO_*常量。 int outIndex = decoder.dequeueOutputBuffer(info, 10000); switch (outIndex) { // 当 Buffer 发生变化时，客户端必须重新指向新的 Buffer 。 case MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED: Log.d(\"DecodeActivity\", \"INFO_OUTPUT_BUFFERS_CHANGED\"); outputBuffers = decoder.getOutputBuffers(); break; // Buffer 封装格式改变时，必须指向新的 Buffer 格式。 case MediaCodec.INFO_OUTPUT_FORMAT_CHANGED: Log.d(\"DecodeActivity\", \"New format \" + decoder.getOutputFormat()); break; // 如果在对dequeueOutputBuffer 超时时，会到达此 case 。 case MediaCodec.INFO_TRY_AGAIN_LATER: Log.d(\"DecodeActivity\", \"dequeueOutputBuffer timed out!\"); break; default: ByteBuffer buffer = outputBuffers[outIndex]; Log.v(\"DecodeActivity\", \"We can't use this buffer but\" + \"render it due to the API limit, \" + buffer); // 使用一个非常简单的时钟来保持视频的FPS，否则视频播放会太快 while (info.presentationTimeUs / 1000 \u003e System.currentTimeMillis() - startMs) { try { sleep(10); } catch (InterruptedException e) { e.printStackTrace(); break; } } // 将缓冲区返回到编解码器或output surface。 // 如果使用output surface配置编解码器，则将render设置为true。 // 将首先将缓冲区发送到该output surface。 // 一旦不再使用/显示缓冲区，surface就会将缓冲区释放编解码器。 decoder.releaseOutputBuffer(outIndex, true); break; } // 所有解码后的帧被渲染后，就可以停止播放。 if ((info.flags \u0026 MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) { Log.d(\"DecodeActivity\", \"OutputBuffer BUFFER_FLAG_END_OF_STREAM\"); break; } } decoder.stop(); decoder.release(); extractor.release(); } } } 3、MediaCodec源码解析 ​\r​\n图中是 mediacodec 的主要工作流程，这里主要介绍一下 mediacodec start 开始介绍一下源码实现。\n3、1 start /frameworks/base/media/java/android/media/MediaCodec.java\npublic final void start() { native_start(); synchronized(mBufferLock) { cacheBuffers(true /* input */); cacheBuffers(false /* input */); } } private native final void native_start(); 从上面的代码可以看到，通过 JNI 调用 native 层代码。\n/frameworks/base/media/jni/android_media_MediaCodec.cpp\nstatic void android_media_MediaCodec_start(JNIEnv *env, jobject thiz) { ALOGV(\"android_media_MediaCodec_start\"); sp\u003cJMediaCodec\u003e codec = getMediaCodec(env, thiz); if (codec == NULL || codec-\u003einitCheck() != OK) { throwExceptionAsNecessary(env, INVALID_OPERATION); return; } status_t err = codec-\u003estart(); throwExceptionAsNecessary(env, err, ACTION_CODE_FATAL, \"start failed\"); } 调用 start()​。\n/frameworks/base/media/jni/android_media_MediaCodec.cpp\nstatus_t JMediaCodec::start() { // 调用 native 层 start() return mCodec-\u003estart(); } 看一下 native 层代码。\n/frameworks/av/media/libstagefright/MediaCodec.cpp\nstatus_t MediaCodec::start() { sp\u003cAMessage\u003e msg = new AMessage(kWhatStart, this); sp\u003cAMessage\u003e callback; ...... return err; } 此时会触发 MediaCodec 的 kWhatStart 事件，通过消息机制继续传。\n/frameworks/av/media/libstagefright/MediaCodec.cpp\nvoid MediaCodec::onMessageReceived(const sp\u003cAMessage\u003e \u0026msg) { ...... case kWhatStart: { // 状态检测。 if (mState == FLUSHED) { setState(STARTED); if (mHavePendingInputBuffers) { onInputBufferAvailable(); mHavePendingInputBuffers = false; } mCodec-\u003esignalResume(); PostReplyWithError(msg, OK); break; } else if (mState != CONFIGURED) { PostReplyWithError(msg, INVALID_OPERATION); break; } if (mReplyID) { mDeferredMessages.push_back(msg); break; } sp\u003cAReplyToken\u003e replyID; CHECK(msg-\u003esenderAwaitsResponse(\u0026replyID)); TunnelPeekState previousState = mTunnelPeekState; if (previousState != TunnelPeekState::kLegacyMode) { mTunnelPeekState = TunnelPeekState::kEnabledNoBuffer; ALOGV(\"TunnelPeekState: %s -\u003e %s\", asString(previousState), asString(TunnelPeekState::kEnabledNoBuffer)); } mReplyID = replyID; setState(STARTING); // 调用ACodecd的方法进行初始化。 mCodec-\u003einitiateStart(); break; } ...... } 创建 AMessage 并传入 kWhatStart。\n/frameworks/av/media/libstagefright/ACodec.cpp\nvoid ACodec::initiateStart() { (new AMessage(kWhatStart, this))-\u003epost(); } ACodec 接收到 kWhatStart 后，调用 onStart()。\n/frameworks/av/media/libstagefright/ACodec.cpp\nbool ACodec::LoadedState::onMessageReceived(const sp\u003cAMessage\u003e \u0026msg) { bool handled = false; switch (msg-\u003ewhat()) { ...... case ACodec::kWhatStart: { onStart(); handled = true; break; } ...... } } 在 onStart()​ 方法中， 通过 sendCommand​ 传输信息改变 OMX 组件的状态。\n/frameworks/av/media/libstagefright/ACodec.cpp\nvoid ACodec::LoadedState::onStart() { ALOGV(\"onStart\"); status_t err = mCodec-\u003emOMXNode-\u003esendCommand(OMX_CommandStateSet, OMX_StateIdle); if (err != OK) { mCodec-\u003esignalError(OMX_ErrorUndefined, makeNoSideEffectStatus(err)); } else { mCodec-\u003echangeState(mCodec-\u003emLoadedToIdleState); } } ​frameworks\\av\\media\\libstagefright\\omx\\1.0\\WOmxNode.cpp​\nReturn\u003cStatus\u003e TWOmxNode::sendCommand(uint32_t cmd, int32_t param) { return toStatus(mBase-\u003esendCommand(toEnumCommandType(cmd), param)); } ​mCodec-\u003emOMXNode-\u003esendCommand​ 调用到 sendCommand​ 设置 OMXNode ​​状态为 StateIdle​\nframeworks\\av\\media\\libstagefright\\omx\\OMXNodeInstance.cpp​\nstatus_t OMXNodeInstance::sendCommand(OMX_COMMANDTYPE cmd, OMX_S32 param) { ...... const char *paramString = cmd == OMX_CommandStateSet ? asString((OMX_STATETYPE)param) : portString(param); CLOG_STATE(sendCommand, \"%s(%d), %s(%d)\", asString(cmd), cmd, paramString, param); OMX_ERRORTYPE err = OMX_SendCommand(mHandle, cmd, param, NULL); CLOG_IF_ERROR(sendCommand, err, \"%s(%d), %s(%d)\", asString(cmd), cmd, paramString, param); return StatusFromOMXError(err); } 下面是 OMX_SendCommand​​ 的构造函数，可以看到最后调用的就是那个 mHandle​​ 的 SendCommand​​ 方法。\n​/frameworks/native/headers/media_plugin/media/openmax/OMX_Core.h​\n#define OMX_SendCommand( \\ hComponent, \\ Cmd, \\ nParam, \\ pCmdData) \\ ((OMX_COMPONENTTYPE*)(hComponent))-\u003eSendCommand( \\ hComponent, \\ Cmd, \\ nParam, \\ pCmdData) /* Macro End */ 这个地方 ((OMX_COMPONENTTYPE*)(hComponent))-\u003eSendCommand​​ 函数实际上是调用的就是如下方法。这里的 me-\u003esendCommand​​ 调用的是 SimpleSoftOMXComponent::sendCommand​​ 。\n​/frameworks/av/media/libstagefright/omx/SoftOMXComponent.cpp​\nOMX_ERRORTYPE SoftOMXComponent::SendCommandWrapper( OMX_HANDLETYPE component, OMX_COMMANDTYPE cmd, OMX_U32 param, OMX_PTR data) { SoftOMXComponent *me = (SoftOMXComponent *) ((OMX_COMPONENTTYPE *)component)-\u003epComponentPrivate; return me-\u003esendCommand(cmd, param, data); } ​SimpleSoftOMXComponent::sendCommand​​ 方法如下，在该方法中消息被传递出去。\n​/frameworks/av/media/libstagefright/omx/SimpleSoftOMXComponent.cpp​\nOMX_ERRORTYPE SimpleSoftOMXComponent::sendCommand( OMX_COMMANDTYPE cmd, OMX_U32 param, OMX_PTR data) { CHECK(data == NULL); sp\u003cAMessage\u003e msg = new AMessage(kWhatSendCommand, mHandler); msg-\u003esetInt32(\"cmd\", cmd); msg-\u003esetInt32(\"param\", param); msg-\u003epost(); return OMX_ErrorNone; } 通过 SimpleSoftOMXComponent​​ 的构造函数可用看到消息投递出去之后何时得到处理。\n​/frameworks/av/media/libstagefright/omx/SimpleSoftOMXComponent.cpp​\nSimpleSoftOMXComponent::SimpleSoftOMXComponent( const char *name, const OMX_CALLBACKTYPE *callbacks, OMX_PTR appData, OMX_COMPONENTTYPE **component) : SoftOMXComponent(name, callbacks, appData, component), mLooper(new ALooper), mHandler(new AHandlerReflector\u003cSimpleSoftOMXComponent\u003e(this)), mState(OMX_StateLoaded), mTargetState(OMX_StateLoaded), mFrameConfig(false) { mLooper-\u003esetName(name); mLooper-\u003eregisterHandler(mHandler); mLooper-\u003estart( false, // runOnCallingThread false, // canCallJava ANDROID_PRIORITY_VIDEO); } 其中 SimpleSoftOMXComponent​ 做为这个 mHandle​ 的投递目标，也就是消息将由 SimpleSoftOMXComponent​ 处理。\n最终，消息会被投递到 mLooper​ 中的 mEventQueue​，并在消息循环（也就是 mLooper.loop()​ 函数中，被 deliverMessage​ ，然后被相应的 hanler​ 处理，也就是 SimpleSoftOMXComponent::onMessageReceived​ 函数）。\n3、2 dequeuelnputBuffer 首先，通过 dequeueInputBuffer​ 查询可用缓冲区空间。\n通过 AMessage​ 发送 kWhatDequeueInputBuffer​ 消息。\n​/frameworks/av/media/libstagefright/MediaCodec.cpp​\nstatus_t MediaCodec::dequeueInputBuffer(size_t *index, int64_t timeoutUs) { sp\u003cAMessage\u003e msg = new AMessage(kWhatDequeueInputBuffer, this); msg-\u003esetInt64(\"timeoutUs\", timeoutUs); sp\u003cAMessage\u003e response; status_t err; if ((err = PostAndAwaitResponse(msg, \u0026response)) != OK) { return err; } CHECK(response-\u003efindSize(\"index\", index)); return OK; } 接收到 kWhatDequeueInputBuffer​ 消息后，通过 handleDequeueInputBuffer()​ 对传入消息进行处理。\n​/frameworks/av/media/libstagefright/MediaCodec.cpp​\nvoid MediaCodec::onMessageReceived(const sp\u003cAMessage\u003e \u0026msg) { switch (msg-\u003ewhat()) { ...... case kWhatDequeueInputBuffer: { ...... if (handleDequeueInputBuffer(replyID, true /* new request */)) { break; } ...... } ...... } } 检查状态及 flag​ ; ​dequeuePortBuffer​ 从 mAvailPortBuffers​ 获取可用输入 buffer​ 下标； 将 index​ 通过 response​ 返回。 ​/frameworks/av/media/libstagefright/MediaCodec.cpp​\nbool MediaCodec::handleDequeueInputBuffer(const sp\u003cAReplyToken\u003e \u0026replyID, bool newRequest) { if (!isExecuting() || (mFlags \u0026 kFlagIsAsync) || (newRequest \u0026\u0026 (mFlags \u0026 kFlagDequeueInputPending))) { PostReplyWithError(replyID, INVALID_OPERATION); return true; } else if (mFlags \u0026 kFlagStickyError) { PostReplyWithError(replyID, getStickyError()); return true; } ssize_t index = dequeuePortBuffer(kPortIndexInput); if (index \u003c 0) { CHECK_EQ(index, -EAGAIN); return false; } sp\u003cAMessage\u003e response = new AMessage; response-\u003esetSize(\"index\", index); response-\u003epostReply(replyID); return true; } 3、3 getInputBuffer 通过 getInputBuffer​​ 获取该索引对应的缓冲区,往缓冲区写入数据。\n​/frameworks/base/media/jni/android_media_MediaCodec.cpp​\nstatic jobject android_media_MediaCodec_getBuffer( JNIEnv *env, jobject thiz, jboolean input, jint index) { ALOGV(\"android_media_MediaCodec_getBuffer\"); sp\u003cJMediaCodec\u003e codec = getMediaCodec(env, thiz); if (codec == NULL || codec-\u003einitCheck() != OK) { throwExceptionAsNecessary(env, INVALID_OPERATION); return NULL; } jobject buffer; status_t err = codec-\u003egetBuffer(env, input, index, \u0026buffer); if (err == OK) { return buffer; } // if we're out of memory, an exception was already thrown if (err != NO_MEMORY) { throwExceptionAsNecessary(env, err); } return NULL; } status_t JMediaCodec::getBuffer( JNIEnv *env, bool input, size_t index, jobject *buf) const { sp\u003cMediaCodecBuffer\u003e buffer; status_t err = input ? mCodec-\u003egetInputBuffer(index, \u0026buffer) : mCodec-\u003egetOutputBuffer(index, \u0026buffer); if (err != OK) { return err; } return createByteBufferFromABuffer( env, !input /* readOnly */, input /* clearBuffer */, buffer, buf); } 调用 MediaCodec.cpp​ 中 getInputBuffer​ 函数，获取 id​ 对应 buffer​; 通过 MediaCodecBuffer​ 创建 ByteBuffer​,实现 java​ 和 native​ 共享内存； 返回 ByteBuffer​； ​/frameworks/av/media/libstagefright/MediaCodec.cpp​\nstatus_t MediaCodec::getInputBuffer(size_t index, sp\u003cMediaCodecBuffer\u003e *buffer) { sp\u003cAMessage\u003e format; return getBufferAndFormat(kPortIndexInput, index, buffer, \u0026format); } 通过 getBufferAndFormat​ 获取缓冲区格式。\n​mPortBuffers​ 通过 index​ 区分输入输出，这里获取所有输入BufferInfo​； 通过下标获取指定的 BufferInfo​； 将 buffer​ 指针指向 BufferInfo​ 的 mData​. ​/frameworks/av/media/libstagefright/MediaCodec.cpp​\nstatus_t MediaCodec::getBufferAndFormat( size_t portIndex, size_t index, sp\u003cMediaCodecBuffer\u003e *buffer, sp\u003cAMessage\u003e *format) { ...... // we do not want mPortBuffers to change during this section // we also don't want mOwnedByClient to change during this Mutex::Autolock al(mBufferLock); std::vector\u003cBufferInfo\u003e \u0026buffers = mPortBuffers[portIndex]; if (index \u003e= buffers.size()) { ALOGE(\"getBufferAndFormat - trying to get buffer with \" \"bad index (index=%zu buffer_size=%zu)\", index, buffers.size()); return INVALID_OPERATION; } const BufferInfo \u0026info = buffers[index]; if (!info.mOwnedByClient) { ALOGE(\"getBufferAndFormat - invalid operation \" \"(the index %zu is not owned by client)\", index); return INVALID_OPERATION; } *buffer = info.mData; *format = info.mData-\u003eformat(); return OK; } 3、4 queueInputBuffer 最后使用 queueInputBuffer​ 将缓冲区提交给解码器进行处理。\n​jni​ 方法 android_media_MediaCodec_queueInputBuffer​ 获取 JMediaCodec​,调用其 queueInputBuffer​，然后调用 MediaCodec​ 的 queueInputBuffer​ 函数\n​/frameworks/base/media/jni/android_media_MediaCodec.cpp​\nstatic void android_media_MediaCodec_queueInputBuffer( JNIEnv *env, jobject thiz, jint index, jint offset, jint size, jlong timestampUs, jint flags) { ALOGV(\"android_media_MediaCodec_queueInputBuffer\"); sp\u003cJMediaCodec\u003e codec = getMediaCodec(env, thiz); if (codec == NULL || codec-\u003einitCheck() != OK) { throwExceptionAsNecessary(env, INVALID_OPERATION); return; } AString errorDetailMsg; status_t err = codec-\u003equeueInputBuffer( index, offset, size, timestampUs, flags, \u0026errorDetailMsg); throwExceptionAsNecessary( env, err, ACTION_CODE_FATAL, errorDetailMsg.empty() ? NULL : errorDetailMsg.c_str()); } status_t JMediaCodec::queueInputBuffer( size_t index, size_t offset, size_t size, int64_t timeUs, uint32_t flags, AString *errorDetailMsg) { return mCodec-\u003equeueInputBuffer( index, offset, size, timeUs, flags, errorDetailMsg); } ​/frameworks/av/media/libstagefright/MediaCodec.cpp​\nstatus_t MediaCodec::queueInputBuffer( size_t index, size_t offset, size_t size, int64_t presentationTimeUs, uint32_t flags, AString *errorDetailMsg) { if (errorDetailMsg != NULL) { errorDetailMsg-\u003eclear(); } sp\u003cAMessage\u003e msg = new AMessage(kWhatQueueInputBuffer, this); msg-\u003esetSize(\"index\", index); msg-\u003esetSize(\"offset\", offset); msg-\u003esetSize(\"size\", size); msg-\u003esetInt64(\"timeUs\", presentationTimeUs); msg-\u003esetInt32(\"flags\", flags); msg-\u003esetPointer(\"errorDetailMsg\", errorDetailMsg); sp\u003cAMessage\u003e response; return PostAndAwaitResponse(msg, \u0026response); } ​onMessageReceived​ 接收消息 kWhatQueueInputBuffer​，调用 onQueueInputBuffer​ 函数\n​/frameworks/av/media/libstagefright/MediaCodec.cpp​\nvoid MediaCodec::onMessageReceived(const sp\u003cAMessage\u003e \u0026msg) { switch (msg-\u003ewhat()) { ...... case kWhatQueueInputBuffer: { ...... status_t err = UNKNOWN_ERROR; if (!mLeftover.empty()) { mLeftover.push_back(msg); size_t index; msg-\u003efindSize(\"index\", \u0026index); err = handleLeftover(index); } else { err = onQueueInputBuffer(msg); } PostReplyWithError(replyID, err); break; } ...... } } ​/frameworks/av/media/libstagefright/MediaCodec.cpp​\nstatus_t MediaCodec::onQueueInputBuffer(const sp\u003cAMessage\u003e \u0026msg) { ...... status_t err = OK; if (hasCryptoOrDescrambler() \u0026\u0026 !c2Buffer \u0026\u0026 !memory) { ...... } else { err = mBufferChannel-\u003equeueInputBuffer(buffer); if (err != OK) { mediametrics_setInt32(mMetricsHandle, kCodecQueueInputBufferError, err); ALOGW(\"Log queueInputBuffer error: %d\", err); } } ...... return err; } 调用 ACodecBufferChannel​ 的 queueInputBuffer​函数\n​/frameworks/av/media/libstagefright/ACodecBufferChannel.cpp​\nstatus_t ACodecBufferChannel::queueInputBuffer(const sp\u003cMediaCodecBuffer\u003e \u0026buffer) { std::shared_ptr\u003cconst std::vector\u003cconst BufferInfo\u003e\u003e array( std::atomic_load(\u0026mInputBuffers)); ...... ALOGV(\"queueInputBuffer #%d\", it-\u003emBufferId); sp\u003cAMessage\u003e msg = mInputBufferFilled-\u003edup(); msg-\u003esetObject(\"buffer\", it-\u003emCodecBuffer); msg-\u003esetInt32(\"buffer-id\", it-\u003emBufferId); msg-\u003epost(); return OK; } ​ACodec​ 接收到 kWhatInputBufferFilled​ 信息后续\n​/frameworks/av/media/libstagefright/ACodec.cpp​\nstd::shared_ptr\u003cBufferChannelBase\u003e ACodec::getBufferChannel() { if (!mBufferChannel) { mBufferChannel = std::make_shared\u003cACodecBufferChannel\u003e( new AMessage(kWhatInputBufferFilled, this), new AMessage(kWhatOutputBufferDrained, this)); } return mBufferChannel; } bool ACodec::BaseState::onMessageReceived(const sp\u003cAMessage\u003e \u0026msg) { switch (msg-\u003ewhat()) { case kWhatInputBufferFilled: { onInputBufferFilled(msg); break; } ...... } } ​ACodec​ 通知 OMX​ ,写入数据。\n​output​ 数据获取流程和 input​ 流程大致上都相似，这里就不在细说了。\n‍\n",
+  "wordCount" : "1736",
+  "inLanguage": "en",
+  "datePublished": "2024-01-07T14:38:19+08:00",
+  "dateModified": "2024-01-07T14:38:19+08:00",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://hzer0k.github.io/multimedia/mediacodec/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "zerok",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://hzer0k.github.io/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="https://hzer0k.github.io" accesskey="h" title="zerok (Alt + H)">zerok</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="18" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="https://hzer0k.github.io/categories/" title="Categories">
+                    <span>Categories</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://hzer0k.github.io/tags/" title="Tags">
+                    <span>Tags</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://hzer0k.github.io/archives/" title="Archives">
+                    <span>Archives</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    <div class="breadcrumbs"><a href="https://hzer0k.github.io">Home</a>&nbsp;»&nbsp;<a href="https://hzer0k.github.io/multimedia/">Multimedia</a></div>
+    <h1 class="post-title entry-hint-parent">
+      MediaCodec
+    </h1>
+    <div class="post-meta"><span title='2024-01-07 14:38:19 +0800 CST'>January 7, 2024</span>&nbsp;·&nbsp;9 min
+
+</div>
+  </header> 
+  <div class="post-content"><h1 id="mediacodec视频播放流程介绍">MediaCodec视频播放流程介绍<a hidden class="anchor" aria-hidden="true" href="#mediacodec视频播放流程介绍">#</a></h1>
+<h2 id="1mediacodec介绍">1、MediaCodec介绍<a hidden class="anchor" aria-hidden="true" href="#1mediacodec介绍">#</a></h2>
+<p>MediaCodec 是 Android 平台提供的一个底层的音视频编解码框架，它是 Android 多媒体基础框架的重要组成部分。它经常和 <code>MediaExtractor</code>​​ 、<code>MediaSync</code>​​ 、  <code>MediaMuxer</code>​​ 、 <code>MediaCrypto</code>​​ 、 <code>MediaDrm</code>​​、 <code>Image</code>​​ 、 <code>Surface</code>​​ 、 <code>Auditrack</code>​​ 一起使用。它本身并不是 Codec，而是通过调用底层编解码组件获得Codec的能力。</p>
+<p><img loading="lazy" src="../../static/mediacodec/mediacodec%281%29.png" alt="image-20231024211730-9irleei"  />
+</p>
+<p>自 Android 5.0 开始，mediacodec 首选异步模式处理数据。</p>
+<p>当 MediaCodec 异步处理数据时，会使用一组输入和输出 Buffer 队列。通常，客户端请求将数据写入空的输入缓冲区，输入 Buffer 填满数据后，发送给 MediaCodec 进行编解码处理。之后，处理完的数据将被写到一个输出 Buffer 中。最后，由客户请求输出 Buffer，消耗输出 Buffer 中的内容，用完之后释放。</p>
+<p><img loading="lazy" src="../../static/mediacodec/mediacodec%282%29.png" alt="image"  />
+</p>
+<p>在其生命周期中，编解码器在概念上存在于三种状态之一：<code>Stopped</code>, <code>Executing</code> 或者 <code>Released</code>。<code>Stopped</code> 状态实际上是三个状态的集合：<code>Uninitialized</code>, <code>Configured</code> 和 <code>Error</code>，而 <code>Executing</code> 状态在概念上通过三个子状态进行：<code>Flushed</code>, <code>Running</code> 和 <code>End-of-Stream</code>。</p>
+<h2 id="2mediacodec视频播放流程">2、MediaCodec视频播放流程<a hidden class="anchor" aria-hidden="true" href="#2mediacodec视频播放流程">#</a></h2>
+<h3 id="21-start流程">2、1 start流程<a hidden class="anchor" aria-hidden="true" href="#21-start流程">#</a></h3>
+<p><a href="https://github.com/cedricfung/MediaCodecDemo">MediaCodecDemo</a></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span><span style="color:#f92672">package</span> io.vec.demo.mediacodec;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> java.nio.ByteBuffer;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> android.app.Activity;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> android.media.MediaCodec;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> android.media.MediaCodec.BufferInfo;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> android.media.MediaExtractor;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> android.media.MediaFormat;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> android.os.Bundle;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> android.os.Environment;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> android.util.Log;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> android.view.Surface;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> android.view.SurfaceHolder;
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> android.view.SurfaceView;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">DecodeActivity</span> <span style="color:#66d9ef">extends</span> Activity <span style="color:#66d9ef">implements</span> SurfaceHolder.<span style="color:#a6e22e">Callback</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// 获取视频文件路径</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">static</span> <span style="color:#66d9ef">final</span> String SAMPLE <span style="color:#f92672">=</span> Environment.<span style="color:#a6e22e">getExternalStorageDirectory</span>() <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;/video.mp4&#34;</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// 初始化播放线程</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">private</span> PlayerThread mPlayer <span style="color:#f92672">=</span> <span style="color:#66d9ef">null</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">@Override</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">protected</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">onCreate</span>(Bundle savedInstanceState) {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">super</span>.<span style="color:#a6e22e">onCreate</span>(savedInstanceState);
+</span></span><span style="display:flex;"><span>        SurfaceView sv <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> SurfaceView(<span style="color:#66d9ef">this</span>);
+</span></span><span style="display:flex;"><span>        sv.<span style="color:#a6e22e">getHolder</span>().<span style="color:#a6e22e">addCallback</span>(<span style="color:#66d9ef">this</span>);
+</span></span><span style="display:flex;"><span>        setContentView(sv);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">protected</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">onDestroy</span>() {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">super</span>.<span style="color:#a6e22e">onDestroy</span>();
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">@Override</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">surfaceCreated</span>(SurfaceHolder holder) {
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">@Override</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">surfaceChanged</span>(SurfaceHolder holder, <span style="color:#66d9ef">int</span> format, 
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">int</span> width, <span style="color:#66d9ef">int</span> height) {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> (mPlayer <span style="color:#f92672">==</span> <span style="color:#66d9ef">null</span>) {
+</span></span><span style="display:flex;"><span>            mPlayer <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> PlayerThread(holder.<span style="color:#a6e22e">getSurface</span>());
+</span></span><span style="display:flex;"><span>            mPlayer.<span style="color:#a6e22e">start</span>();
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">@Override</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">surfaceDestroyed</span>(SurfaceHolder holder) {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> (mPlayer <span style="color:#f92672">!=</span> <span style="color:#66d9ef">null</span>) {
+</span></span><span style="display:flex;"><span>            mPlayer.<span style="color:#a6e22e">interrupt</span>();
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">PlayerThread</span> <span style="color:#66d9ef">extends</span> Thread {
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// MediaExtractor负责数据解析</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">private</span> MediaExtractor extractor;
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// MediaCodec负责媒体文件的编解码工作。</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">private</span> MediaCodec decoder;
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// 显示区域</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">private</span> Surface surface;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">public</span> <span style="color:#a6e22e">PlayerThread</span>(Surface surface) {
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">this</span>.<span style="color:#a6e22e">surface</span> <span style="color:#f92672">=</span> surface;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">@Override</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">run</span>() {
+</span></span><span style="display:flex;"><span>            extractor <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> MediaExtractor(); 
+</span></span><span style="display:flex;"><span>            extractor.<span style="color:#a6e22e">setDataSource</span>(SAMPLE);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// 遍历数据源音视频轨迹。</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">for</span> (<span style="color:#66d9ef">int</span> i <span style="color:#f92672">=</span> 0; i <span style="color:#f92672">&lt;</span> extractor.<span style="color:#a6e22e">getTrackCount</span>(); i<span style="color:#f92672">++</span>) {
+</span></span><span style="display:flex;"><span>                MediaFormat format <span style="color:#f92672">=</span> extractor.<span style="color:#a6e22e">getTrackFormat</span>(i);
+</span></span><span style="display:flex;"><span>                String mime <span style="color:#f92672">=</span> format.<span style="color:#a6e22e">getString</span>(MediaFormat.<span style="color:#a6e22e">KEY_MIME</span>);
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">if</span> (mime.<span style="color:#a6e22e">startsWith</span>(<span style="color:#e6db74">&#34;video/&#34;</span>)) {
+</span></span><span style="display:flex;"><span>                    extractor.<span style="color:#a6e22e">selectTrack</span>(i);
+</span></span><span style="display:flex;"><span>                    <span style="color:#75715e">// 根据通道类型创建解码器。</span>
+</span></span><span style="display:flex;"><span>                    decoder <span style="color:#f92672">=</span> MediaCodec.<span style="color:#a6e22e">createDecoderByType</span>(mime);
+</span></span><span style="display:flex;"><span>                    <span style="color:#75715e">// 设置解码参数。</span>
+</span></span><span style="display:flex;"><span>                    decoder.<span style="color:#a6e22e">configure</span>(format, surface, <span style="color:#66d9ef">null</span>, 0);
+</span></span><span style="display:flex;"><span>                    <span style="color:#66d9ef">break</span>;
+</span></span><span style="display:flex;"><span>                }
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span> (decoder <span style="color:#f92672">==</span> <span style="color:#66d9ef">null</span>) {
+</span></span><span style="display:flex;"><span>                Log.<span style="color:#a6e22e">e</span>(<span style="color:#e6db74">&#34;DecodeActivity&#34;</span>, <span style="color:#e6db74">&#34;Can&#39;t find video info!&#34;</span>);
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">return</span>;
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>        
+</span></span><span style="display:flex;"><span>            decoder.<span style="color:#a6e22e">start</span>();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// 调用 start() 函数之后，没有异常，就表示成功创建了组件。</span>
+</span></span><span style="display:flex;"><span>            ByteBuffer<span style="color:#f92672">[]</span> inputBuffers <span style="color:#f92672">=</span> decoder.<span style="color:#a6e22e">getInputBuffers</span>();
+</span></span><span style="display:flex;"><span>            ByteBuffer<span style="color:#f92672">[]</span> outputBuffers <span style="color:#f92672">=</span> decoder.<span style="color:#a6e22e">getOutputBuffers</span>();
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// 每个 Buffer 的元数据包括具体范围偏移及大小，</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// 以及有效数据中相关解码的 Buffer。</span>
+</span></span><span style="display:flex;"><span>            BufferInfo info <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> BufferInfo();
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">boolean</span> isEOS <span style="color:#f92672">=</span> <span style="color:#66d9ef">false</span>;
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">long</span> startMs <span style="color:#f92672">=</span> System.<span style="color:#a6e22e">currentTimeMillis</span>();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">while</span> (<span style="color:#f92672">!</span>Thread.<span style="color:#a6e22e">interrupted</span>()) {
+</span></span><span style="display:flex;"><span>				<span style="color:#75715e">// 只要线程不中断</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>isEOS) {
+</span></span><span style="display:flex;"><span>                    <span style="color:#66d9ef">int</span> inIndex <span style="color:#f92672">=</span> decoder.<span style="color:#a6e22e">dequeueInputBuffer</span>(10000);
+</span></span><span style="display:flex;"><span>                    <span style="color:#66d9ef">if</span> (inIndex <span style="color:#f92672">&gt;=</span> 0) {
+</span></span><span style="display:flex;"><span>                        <span style="color:#75715e">// 根据索引得到输入缓冲区</span>
+</span></span><span style="display:flex;"><span>                        ByteBuffer buffer <span style="color:#f92672">=</span> inputBuffers<span style="color:#f92672">[</span>inIndex<span style="color:#f92672">]</span>;
+</span></span><span style="display:flex;"><span>                        <span style="color:#75715e">// 检索编码样本，并从给定的索引开始将其存储在字节缓冲区中。</span>
+</span></span><span style="display:flex;"><span>                        <span style="color:#66d9ef">int</span> sampleSize <span style="color:#f92672">=</span> extractor.<span style="color:#a6e22e">readSampleData</span>(buffer, 0);
+</span></span><span style="display:flex;"><span>                        <span style="color:#66d9ef">if</span> (sampleSize <span style="color:#f92672">&lt;</span> 0) {
+</span></span><span style="display:flex;"><span>                            <span style="color:#75715e">// 此时我们不应该停止播放，只需将 EOS 标志传递给解码器，</span>
+</span></span><span style="display:flex;"><span>							<span style="color:#75715e">// 我们将从 dequeueOutputBuffer 中再次获取它。</span>
+</span></span><span style="display:flex;"><span>                            Log.<span style="color:#a6e22e">d</span>(<span style="color:#e6db74">&#34;DecodeActivity&#34;</span>, 
+</span></span><span style="display:flex;"><span>                                <span style="color:#e6db74">&#34;InputBuffer BUFFER_FLAG_END_OF_STREAM&#34;</span>);
+</span></span><span style="display:flex;"><span>                            <span style="color:#75715e">// 传入的参数分别为：可用缓冲区索引、</span>
+</span></span><span style="display:flex;"><span>                            <span style="color:#75715e">// 输入缓冲区中数据开始的字节偏移量、</span>
+</span></span><span style="display:flex;"><span>                            <span style="color:#75715e">// 解密所需的元数据，此调用返回后可以立即重用对象。</span>
+</span></span><span style="display:flex;"><span>                            <span style="color:#75715e">// 此值不能为null、</span>
+</span></span><span style="display:flex;"><span>                            <span style="color:#75715e">// 此缓冲区的演示时间戳（us）</span>
+</span></span><span style="display:flex;"><span>                            <span style="color:#75715e">// 标志BUFFER_FLAG_CODEC_CONFIG和</span>
+</span></span><span style="display:flex;"><span>                            <span style="color:#75715e">// BUFFER-FLAG_END_of_STREAM的位掩码</span>
+</span></span><span style="display:flex;"><span>                            decoder.<span style="color:#a6e22e">queueInputBuffer</span>(inIndex, 0, 0, 0, 
+</span></span><span style="display:flex;"><span>                                MediaCodec.<span style="color:#a6e22e">BUFFER_FLAG_END_OF_STREAM</span>);
+</span></span><span style="display:flex;"><span>                            isEOS <span style="color:#f92672">=</span> <span style="color:#66d9ef">true</span>;
+</span></span><span style="display:flex;"><span>                        } <span style="color:#66d9ef">else</span> {
+</span></span><span style="display:flex;"><span>                            decoder.<span style="color:#a6e22e">queueInputBuffer</span>(inIndex, 0, sampleSize, 
+</span></span><span style="display:flex;"><span>                                extractor.<span style="color:#a6e22e">getSampleTime</span>(), 0);
+</span></span><span style="display:flex;"><span>                            extractor.<span style="color:#a6e22e">advance</span>();
+</span></span><span style="display:flex;"><span>                        }
+</span></span><span style="display:flex;"><span>                    }
+</span></span><span style="display:flex;"><span>                }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>                <span style="color:#75715e">// 取出输出缓冲区的队列，最多阻塞 10000us。</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#75715e">// 返回已成功解码的输出缓冲区索引或者INDO_*常量。</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">int</span> outIndex <span style="color:#f92672">=</span> decoder.<span style="color:#a6e22e">dequeueOutputBuffer</span>(info, 10000);
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">switch</span> (outIndex) {
+</span></span><span style="display:flex;"><span>                    <span style="color:#75715e">// 当 Buffer 发生变化时，客户端必须重新指向新的 Buffer 。</span>
+</span></span><span style="display:flex;"><span>                    <span style="color:#66d9ef">case</span> MediaCodec.<span style="color:#a6e22e">INFO_OUTPUT_BUFFERS_CHANGED</span>:
+</span></span><span style="display:flex;"><span>                        Log.<span style="color:#a6e22e">d</span>(<span style="color:#e6db74">&#34;DecodeActivity&#34;</span>, <span style="color:#e6db74">&#34;INFO_OUTPUT_BUFFERS_CHANGED&#34;</span>);
+</span></span><span style="display:flex;"><span>                        outputBuffers <span style="color:#f92672">=</span> decoder.<span style="color:#a6e22e">getOutputBuffers</span>();
+</span></span><span style="display:flex;"><span>                        <span style="color:#66d9ef">break</span>;
+</span></span><span style="display:flex;"><span>                    <span style="color:#75715e">// Buffer 封装格式改变时，必须指向新的 Buffer 格式。</span>
+</span></span><span style="display:flex;"><span>                    <span style="color:#66d9ef">case</span> MediaCodec.<span style="color:#a6e22e">INFO_OUTPUT_FORMAT_CHANGED</span>:
+</span></span><span style="display:flex;"><span>                        Log.<span style="color:#a6e22e">d</span>(<span style="color:#e6db74">&#34;DecodeActivity&#34;</span>, <span style="color:#e6db74">&#34;New format &#34;</span> 
+</span></span><span style="display:flex;"><span>                            <span style="color:#f92672">+</span> decoder.<span style="color:#a6e22e">getOutputFormat</span>());
+</span></span><span style="display:flex;"><span>                        <span style="color:#66d9ef">break</span>;
+</span></span><span style="display:flex;"><span>                    <span style="color:#75715e">// 如果在对dequeueOutputBuffer 超时时，会到达此 case 。</span>
+</span></span><span style="display:flex;"><span>                    <span style="color:#66d9ef">case</span> MediaCodec.<span style="color:#a6e22e">INFO_TRY_AGAIN_LATER</span>:
+</span></span><span style="display:flex;"><span>                        Log.<span style="color:#a6e22e">d</span>(<span style="color:#e6db74">&#34;DecodeActivity&#34;</span>, <span style="color:#e6db74">&#34;dequeueOutputBuffer timed out!&#34;</span>);
+</span></span><span style="display:flex;"><span>                        <span style="color:#66d9ef">break</span>;
+</span></span><span style="display:flex;"><span>                    <span style="color:#66d9ef">default</span>:
+</span></span><span style="display:flex;"><span>                        ByteBuffer buffer <span style="color:#f92672">=</span> outputBuffers<span style="color:#f92672">[</span>outIndex<span style="color:#f92672">]</span>;
+</span></span><span style="display:flex;"><span>                        Log.<span style="color:#a6e22e">v</span>(<span style="color:#e6db74">&#34;DecodeActivity&#34;</span>, <span style="color:#e6db74">&#34;We can&#39;t use this buffer but&#34;</span>  
+</span></span><span style="display:flex;"><span>                            <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;render it due to the API limit, &#34;</span> <span style="color:#f92672">+</span> buffer);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>                    <span style="color:#75715e">// 使用一个非常简单的时钟来保持视频的FPS，否则视频播放会太快</span>
+</span></span><span style="display:flex;"><span>                    <span style="color:#66d9ef">while</span> (info.<span style="color:#a6e22e">presentationTimeUs</span> <span style="color:#f92672">/</span> 1000 <span style="color:#f92672">&gt;</span> System.<span style="color:#a6e22e">currentTimeMillis</span>() <span style="color:#f92672">-</span> startMs) {
+</span></span><span style="display:flex;"><span>                        <span style="color:#66d9ef">try</span> {
+</span></span><span style="display:flex;"><span>                            sleep(10);
+</span></span><span style="display:flex;"><span>                        } <span style="color:#66d9ef">catch</span> (InterruptedException e) {
+</span></span><span style="display:flex;"><span>                            e.<span style="color:#a6e22e">printStackTrace</span>();
+</span></span><span style="display:flex;"><span>                            <span style="color:#66d9ef">break</span>;
+</span></span><span style="display:flex;"><span>                        }
+</span></span><span style="display:flex;"><span>                    }
+</span></span><span style="display:flex;"><span>                    <span style="color:#75715e">// 将缓冲区返回到编解码器或output surface。</span>
+</span></span><span style="display:flex;"><span>                    <span style="color:#75715e">// 如果使用output surface配置编解码器，则将render设置为true。</span>
+</span></span><span style="display:flex;"><span>                    <span style="color:#75715e">// 将首先将缓冲区发送到该output surface。</span>
+</span></span><span style="display:flex;"><span>                    <span style="color:#75715e">// 一旦不再使用/显示缓冲区，surface就会将缓冲区释放编解码器。</span>
+</span></span><span style="display:flex;"><span>                    decoder.<span style="color:#a6e22e">releaseOutputBuffer</span>(outIndex, <span style="color:#66d9ef">true</span>);
+</span></span><span style="display:flex;"><span>                    <span style="color:#66d9ef">break</span>;
+</span></span><span style="display:flex;"><span>                }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>                <span style="color:#75715e">// 所有解码后的帧被渲染后，就可以停止播放。</span>
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">if</span> ((info.<span style="color:#a6e22e">flags</span> <span style="color:#f92672">&amp;</span> MediaCodec.<span style="color:#a6e22e">BUFFER_FLAG_END_OF_STREAM</span>) <span style="color:#f92672">!=</span> 0) {
+</span></span><span style="display:flex;"><span>                    Log.<span style="color:#a6e22e">d</span>(<span style="color:#e6db74">&#34;DecodeActivity&#34;</span>, 
+</span></span><span style="display:flex;"><span>                        <span style="color:#e6db74">&#34;OutputBuffer BUFFER_FLAG_END_OF_STREAM&#34;</span>);
+</span></span><span style="display:flex;"><span>                    <span style="color:#66d9ef">break</span>;
+</span></span><span style="display:flex;"><span>                }
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            decoder.<span style="color:#a6e22e">stop</span>();
+</span></span><span style="display:flex;"><span>            decoder.<span style="color:#a6e22e">release</span>();
+</span></span><span style="display:flex;"><span>            extractor.<span style="color:#a6e22e">release</span>();
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h2 id="3mediacodec源码解析">3、MediaCodec源码解析<a hidden class="anchor" aria-hidden="true" href="#3mediacodec源码解析">#</a></h2>
+<p>​<img loading="lazy" src="../../static/mediacodec/mediacodec%283%29.png" alt="image"  />
+​</p>
+<p>图中是 mediacodec 的主要工作流程，这里主要介绍一下 mediacodec start 开始介绍一下源码实现。</p>
+<h3 id="31-start">3、1 start<a hidden class="anchor" aria-hidden="true" href="#31-start">#</a></h3>
+<p><code>/frameworks/base/media/java/android/media/MediaCodec.java</code></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-java" data-lang="java"><span style="display:flex;"><span><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">final</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">start</span>() {
+</span></span><span style="display:flex;"><span>    native_start();
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">synchronized</span>(mBufferLock) {
+</span></span><span style="display:flex;"><span>        cacheBuffers(<span style="color:#66d9ef">true</span> <span style="color:#75715e">/* input */</span>);
+</span></span><span style="display:flex;"><span>        cacheBuffers(<span style="color:#66d9ef">false</span> <span style="color:#75715e">/* input */</span>);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">private</span> <span style="color:#66d9ef">native</span> <span style="color:#66d9ef">final</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">native_start</span>();
+</span></span></code></pre></div><p>从上面的代码可以看到，通过 <code>JNI</code> 调用 <code>native</code> 层代码。</p>
+<p><code>/frameworks/base/media/jni/android_media_MediaCodec.cpp</code></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">android_media_MediaCodec_start</span>(JNIEnv <span style="color:#f92672">*</span>env, jobject thiz) {
+</span></span><span style="display:flex;"><span>    ALOGV(<span style="color:#e6db74">&#34;android_media_MediaCodec_start&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    sp<span style="color:#f92672">&lt;</span>JMediaCodec<span style="color:#f92672">&gt;</span> codec <span style="color:#f92672">=</span> getMediaCodec(env, thiz);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (codec <span style="color:#f92672">==</span> NULL <span style="color:#f92672">||</span> codec<span style="color:#f92672">-&gt;</span>initCheck() <span style="color:#f92672">!=</span> OK) {
+</span></span><span style="display:flex;"><span>        throwExceptionAsNecessary(env, INVALID_OPERATION);
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    status_t err <span style="color:#f92672">=</span> codec<span style="color:#f92672">-&gt;</span>start();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    throwExceptionAsNecessary(env, err, ACTION_CODE_FATAL, <span style="color:#e6db74">&#34;start failed&#34;</span>);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>调用 <code>start()</code>​。</p>
+<p><code>/frameworks/base/media/jni/android_media_MediaCodec.cpp</code></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>status_t JMediaCodec<span style="color:#f92672">::</span>start() {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// 调用 native 层 start()
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">return</span> mCodec<span style="color:#f92672">-&gt;</span>start();
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>看一下 native 层代码。</p>
+<p><code>/frameworks/av/media/libstagefright/MediaCodec.cpp</code></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>status_t MediaCodec<span style="color:#f92672">::</span>start() {
+</span></span><span style="display:flex;"><span>    sp<span style="color:#f92672">&lt;</span>AMessage<span style="color:#f92672">&gt;</span> msg <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> AMessage(kWhatStart, <span style="color:#66d9ef">this</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    sp<span style="color:#f92672">&lt;</span>AMessage<span style="color:#f92672">&gt;</span> callback;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    ......
+</span></span><span style="display:flex;"><span>  
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> err;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>此时会触发 <code>MediaCodec</code> 的 <code>kWhatStart</code> 事件，通过消息机制继续传。</p>
+<p><code>/frameworks/av/media/libstagefright/MediaCodec.cpp</code></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#66d9ef">void</span> MediaCodec<span style="color:#f92672">::</span>onMessageReceived(<span style="color:#66d9ef">const</span> sp<span style="color:#f92672">&lt;</span>AMessage<span style="color:#f92672">&gt;</span> <span style="color:#f92672">&amp;</span>msg) {
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    ......
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">case</span> kWhatStart:
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// 状态检测。
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            <span style="color:#66d9ef">if</span> (mState <span style="color:#f92672">==</span> FLUSHED) {
+</span></span><span style="display:flex;"><span>                setState(STARTED);
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">if</span> (mHavePendingInputBuffers) {
+</span></span><span style="display:flex;"><span>                    onInputBufferAvailable();
+</span></span><span style="display:flex;"><span>                    mHavePendingInputBuffers <span style="color:#f92672">=</span> false;
+</span></span><span style="display:flex;"><span>                }
+</span></span><span style="display:flex;"><span>                mCodec<span style="color:#f92672">-&gt;</span>signalResume();
+</span></span><span style="display:flex;"><span>                PostReplyWithError(msg, OK);
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">break</span>;
+</span></span><span style="display:flex;"><span>            } <span style="color:#66d9ef">else</span> <span style="color:#a6e22e">if</span> (mState <span style="color:#f92672">!=</span> CONFIGURED) {
+</span></span><span style="display:flex;"><span>                PostReplyWithError(msg, INVALID_OPERATION);
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">break</span>;
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span> (mReplyID) {
+</span></span><span style="display:flex;"><span>                mDeferredMessages.push_back(msg);
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">break</span>;
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>            sp<span style="color:#f92672">&lt;</span>AReplyToken<span style="color:#f92672">&gt;</span> replyID;
+</span></span><span style="display:flex;"><span>            CHECK(msg<span style="color:#f92672">-&gt;</span>senderAwaitsResponse(<span style="color:#f92672">&amp;</span>replyID));
+</span></span><span style="display:flex;"><span>            TunnelPeekState previousState <span style="color:#f92672">=</span> mTunnelPeekState;
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span> (previousState <span style="color:#f92672">!=</span> TunnelPeekState<span style="color:#f92672">::</span>kLegacyMode) {
+</span></span><span style="display:flex;"><span>                mTunnelPeekState <span style="color:#f92672">=</span> TunnelPeekState<span style="color:#f92672">::</span>kEnabledNoBuffer;
+</span></span><span style="display:flex;"><span>                ALOGV(<span style="color:#e6db74">&#34;TunnelPeekState: %s -&gt; %s&#34;</span>,
+</span></span><span style="display:flex;"><span>                        asString(previousState),
+</span></span><span style="display:flex;"><span>                        asString(TunnelPeekState<span style="color:#f92672">::</span>kEnabledNoBuffer));
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            mReplyID <span style="color:#f92672">=</span> replyID;
+</span></span><span style="display:flex;"><span>            setState(STARTING);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#75715e">// 调用ACodecd的方法进行初始化。
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            mCodec<span style="color:#f92672">-&gt;</span>initiateStart();
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">break</span>;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        ......
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>创建 <code>AMessage</code> 并传入 <code>kWhatStart</code>。</p>
+<p><code>/frameworks/av/media/libstagefright/ACodec.cpp</code></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#66d9ef">void</span> ACodec<span style="color:#f92672">::</span>initiateStart() {
+</span></span><span style="display:flex;"><span>    (<span style="color:#66d9ef">new</span> AMessage(kWhatStart, <span style="color:#66d9ef">this</span>))<span style="color:#f92672">-&gt;</span>post();
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p><code>ACodec</code> 接收到 <code>kWhatStart</code> 后，调用 <code>onStart()</code>。</p>
+<p><code>/frameworks/av/media/libstagefright/ACodec.cpp</code></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#66d9ef">bool</span> ACodec<span style="color:#f92672">::</span>LoadedState<span style="color:#f92672">::</span>onMessageReceived(<span style="color:#66d9ef">const</span> sp<span style="color:#f92672">&lt;</span>AMessage<span style="color:#f92672">&gt;</span> <span style="color:#f92672">&amp;</span>msg) {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">bool</span> handled <span style="color:#f92672">=</span> false;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">switch</span> (msg<span style="color:#f92672">-&gt;</span>what()) {
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        ......
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">case</span> ACodec<span style="color:#f92672">::</span>kWhatStart:
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            onStart();
+</span></span><span style="display:flex;"><span>            handled <span style="color:#f92672">=</span> true;
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">break</span>;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>        ......
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>在 <code>onStart()</code>​ 方法中， 通过 <code>sendCommand</code>​ 传输信息改变 OMX 组件的状态。</p>
+<p><code>/frameworks/av/media/libstagefright/ACodec.cpp</code></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#66d9ef">void</span> ACodec<span style="color:#f92672">::</span>LoadedState<span style="color:#f92672">::</span>onStart() {
+</span></span><span style="display:flex;"><span>    ALOGV(<span style="color:#e6db74">&#34;onStart&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    status_t err <span style="color:#f92672">=</span> mCodec<span style="color:#f92672">-&gt;</span>mOMXNode<span style="color:#f92672">-&gt;</span>sendCommand(OMX_CommandStateSet, OMX_StateIdle);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (err <span style="color:#f92672">!=</span> OK) {
+</span></span><span style="display:flex;"><span>        mCodec<span style="color:#f92672">-&gt;</span>signalError(OMX_ErrorUndefined, makeNoSideEffectStatus(err));
+</span></span><span style="display:flex;"><span>    } <span style="color:#66d9ef">else</span> {
+</span></span><span style="display:flex;"><span>        mCodec<span style="color:#f92672">-&gt;</span>changeState(mCodec<span style="color:#f92672">-&gt;</span>mLoadedToIdleState);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>​<code>frameworks\av\media\libstagefright\omx\1.0\WOmxNode.cpp</code>​</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>Return<span style="color:#f92672">&lt;</span>Status<span style="color:#f92672">&gt;</span> TWOmxNode<span style="color:#f92672">::</span>sendCommand(<span style="color:#66d9ef">uint32_t</span> cmd, <span style="color:#66d9ef">int32_t</span> param) {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">toStatus</span>(mBase<span style="color:#f92672">-&gt;</span>sendCommand(toEnumCommandType(cmd), param));
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>​<code>mCodec-&gt;mOMXNode-&gt;sendCommand</code>​ 调用到  <code>sendCommand</code>​ 设置 <code>OMXNode ​</code>​状态为 <code>StateIdle</code>​</p>
+<p><code>frameworks\av\media\libstagefright\omx\OMXNodeInstance.cpp</code>​</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>status_t OMXNodeInstance<span style="color:#f92672">::</span>sendCommand(OMX_COMMANDTYPE cmd, OMX_S32 param) {
+</span></span><span style="display:flex;"><span>  
+</span></span><span style="display:flex;"><span>	......
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>paramString <span style="color:#f92672">=</span> cmd <span style="color:#f92672">==</span> OMX_CommandStateSet <span style="color:#f92672">?</span> asString((OMX_STATETYPE)param) <span style="color:#f92672">:</span> portString(param);
+</span></span><span style="display:flex;"><span>    CLOG_STATE(sendCommand, <span style="color:#e6db74">&#34;%s(%d), %s(%d)&#34;</span>, asString(cmd), cmd, paramString, param);
+</span></span><span style="display:flex;"><span>    OMX_ERRORTYPE err <span style="color:#f92672">=</span> OMX_SendCommand(mHandle, cmd, param, NULL);
+</span></span><span style="display:flex;"><span>    CLOG_IF_ERROR(sendCommand, err, <span style="color:#e6db74">&#34;%s(%d), %s(%d)&#34;</span>, asString(cmd), cmd, paramString, param);
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">StatusFromOMXError</span>(err);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>下面是 <code>OMX_SendCommand</code>​​ 的构造函数，可以看到最后调用的就是那个 <code>mHandle</code>​​ 的 <code>SendCommand</code>​​ 方法。</p>
+<p>​<code>/frameworks/native/headers/media_plugin/media/openmax/OMX_Core.h</code>​</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#75715e">#define OMX_SendCommand(                                    \
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">         hComponent,                                        \
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">         Cmd,                                               \
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">         nParam,                                            \
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">         pCmdData)                                          \
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">     ((OMX_COMPONENTTYPE*)(hComponent))-&gt;SendCommand(       \
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">         hComponent,                                        \
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">         Cmd,                                               \
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">         nParam,                                            \
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">         pCmdData)                          </span><span style="color:#75715e">/* Macro End */</span><span style="color:#75715e">
+</span></span></span></code></pre></div><p>这个地方 <code>((OMX_COMPONENTTYPE*)(hComponent))-&gt;SendCommand</code>​​ 函数实际上是调用的就是如下方法。这里的 <code>me-&gt;sendCommand</code>​​ 调用的是 <code>SimpleSoftOMXComponent::sendCommand</code>​​ 。</p>
+<p>​<code>/frameworks/av/media/libstagefright/omx/SoftOMXComponent.cpp</code>​</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>OMX_ERRORTYPE SoftOMXComponent<span style="color:#f92672">::</span>SendCommandWrapper(
+</span></span><span style="display:flex;"><span>        OMX_HANDLETYPE component,
+</span></span><span style="display:flex;"><span>        OMX_COMMANDTYPE cmd,
+</span></span><span style="display:flex;"><span>        OMX_U32 param,
+</span></span><span style="display:flex;"><span>        OMX_PTR data) {
+</span></span><span style="display:flex;"><span>    SoftOMXComponent <span style="color:#f92672">*</span>me <span style="color:#f92672">=</span>
+</span></span><span style="display:flex;"><span>        (SoftOMXComponent <span style="color:#f92672">*</span>)
+</span></span><span style="display:flex;"><span>            ((OMX_COMPONENTTYPE <span style="color:#f92672">*</span>)component)<span style="color:#f92672">-&gt;</span>pComponentPrivate;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> me<span style="color:#f92672">-&gt;</span>sendCommand(cmd, param, data);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>​<code>SimpleSoftOMXComponent::sendCommand</code>​​ 方法如下，在该方法中消息被传递出去。</p>
+<p>​<code>/frameworks/av/media/libstagefright/omx/SimpleSoftOMXComponent.cpp</code>​</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>OMX_ERRORTYPE SimpleSoftOMXComponent<span style="color:#f92672">::</span>sendCommand(
+</span></span><span style="display:flex;"><span>        OMX_COMMANDTYPE cmd, OMX_U32 param, OMX_PTR data) {
+</span></span><span style="display:flex;"><span>    CHECK(data <span style="color:#f92672">==</span> NULL);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    sp<span style="color:#f92672">&lt;</span>AMessage<span style="color:#f92672">&gt;</span> msg <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> AMessage(kWhatSendCommand, mHandler);
+</span></span><span style="display:flex;"><span>    msg<span style="color:#f92672">-&gt;</span>setInt32(<span style="color:#e6db74">&#34;cmd&#34;</span>, cmd);
+</span></span><span style="display:flex;"><span>    msg<span style="color:#f92672">-&gt;</span>setInt32(<span style="color:#e6db74">&#34;param&#34;</span>, param);
+</span></span><span style="display:flex;"><span>    msg<span style="color:#f92672">-&gt;</span>post();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> OMX_ErrorNone;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>通过 <code>SimpleSoftOMXComponent</code>​​ 的构造函数可用看到消息投递出去之后何时得到处理。</p>
+<p>​<code>/frameworks/av/media/libstagefright/omx/SimpleSoftOMXComponent.cpp</code>​</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>SimpleSoftOMXComponent<span style="color:#f92672">::</span>SimpleSoftOMXComponent(
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">const</span> <span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>name,
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">const</span> OMX_CALLBACKTYPE <span style="color:#f92672">*</span>callbacks,
+</span></span><span style="display:flex;"><span>        OMX_PTR appData,
+</span></span><span style="display:flex;"><span>        OMX_COMPONENTTYPE <span style="color:#f92672">**</span>component)
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">:</span> SoftOMXComponent(name, callbacks, appData, component),
+</span></span><span style="display:flex;"><span>      mLooper(<span style="color:#66d9ef">new</span> ALooper),
+</span></span><span style="display:flex;"><span>      mHandler(<span style="color:#66d9ef">new</span> AHandlerReflector<span style="color:#f92672">&lt;</span>SimpleSoftOMXComponent<span style="color:#f92672">&gt;</span>(<span style="color:#66d9ef">this</span>)),
+</span></span><span style="display:flex;"><span>      mState(OMX_StateLoaded),
+</span></span><span style="display:flex;"><span>      mTargetState(OMX_StateLoaded),
+</span></span><span style="display:flex;"><span>      mFrameConfig(false) {
+</span></span><span style="display:flex;"><span>    mLooper<span style="color:#f92672">-&gt;</span>setName(name);
+</span></span><span style="display:flex;"><span>    mLooper<span style="color:#f92672">-&gt;</span>registerHandler(mHandler);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    mLooper<span style="color:#f92672">-&gt;</span>start(
+</span></span><span style="display:flex;"><span>            false, <span style="color:#75715e">// runOnCallingThread
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            false, <span style="color:#75715e">// canCallJava
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            ANDROID_PRIORITY_VIDEO);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>其中 <code>SimpleSoftOMXComponent</code>​ 做为这个 <code>mHandle</code>​ 的投递目标，也就是消息将由 <code>SimpleSoftOMXComponent</code>​ 处理。<br>
+最终，消息会被投递到 <code>mLooper</code>​ 中的 <code>mEventQueue</code>​，并在消息循环（也就是 <code>mLooper.loop()</code>​ 函数中，被 <code>deliverMessage</code>​ ，然后被相应的 <code>hanler</code>​ 处理，也就是 <code>SimpleSoftOMXComponent::onMessageReceived</code>​ 函数）。</p>
+<h3 id="32-dequeuelnputbuffer">3、2 dequeuelnputBuffer<a hidden class="anchor" aria-hidden="true" href="#32-dequeuelnputbuffer">#</a></h3>
+<p>首先，通过 <code>dequeueInputBuffer</code>​ 查询可用缓冲区空间。</p>
+<p>通过 <code>AMessage</code>​ 发送 <code>kWhatDequeueInputBuffer</code>​ 消息。</p>
+<p>​<code>/frameworks/av/media/libstagefright/MediaCodec.cpp</code>​</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>status_t MediaCodec<span style="color:#f92672">::</span>dequeueInputBuffer(size_t <span style="color:#f92672">*</span>index, <span style="color:#66d9ef">int64_t</span> timeoutUs) {
+</span></span><span style="display:flex;"><span>    sp<span style="color:#f92672">&lt;</span>AMessage<span style="color:#f92672">&gt;</span> msg <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> AMessage(kWhatDequeueInputBuffer, <span style="color:#66d9ef">this</span>);
+</span></span><span style="display:flex;"><span>    msg<span style="color:#f92672">-&gt;</span>setInt64(<span style="color:#e6db74">&#34;timeoutUs&#34;</span>, timeoutUs);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    sp<span style="color:#f92672">&lt;</span>AMessage<span style="color:#f92672">&gt;</span> response;
+</span></span><span style="display:flex;"><span>    status_t err;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> ((err <span style="color:#f92672">=</span> PostAndAwaitResponse(msg, <span style="color:#f92672">&amp;</span>response)) <span style="color:#f92672">!=</span> OK) {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> err;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    CHECK(response<span style="color:#f92672">-&gt;</span>findSize(<span style="color:#e6db74">&#34;index&#34;</span>, index));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> OK;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>接收到 <code>kWhatDequeueInputBuffer</code>​ 消息后，通过 <code>handleDequeueInputBuffer()</code>​ 对传入消息进行处理。</p>
+<p>​<code>/frameworks/av/media/libstagefright/MediaCodec.cpp</code>​</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#66d9ef">void</span> MediaCodec<span style="color:#f92672">::</span>onMessageReceived(<span style="color:#66d9ef">const</span> sp<span style="color:#f92672">&lt;</span>AMessage<span style="color:#f92672">&gt;</span> <span style="color:#f92672">&amp;</span>msg) {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">switch</span> (msg<span style="color:#f92672">-&gt;</span>what()) {
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>		......
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">case</span> kWhatDequeueInputBuffer:
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>			......
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span> (handleDequeueInputBuffer(replyID, true <span style="color:#75715e">/* new request */</span>)) {
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">break</span>;
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            ......
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>		......
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><ol>
+<li>检查状态及 <code>flag</code>​ ;</li>
+<li>​<code>dequeuePortBuffer</code>​ 从 <code>mAvailPortBuffers</code>​ 获取可用输入 <code>buffer</code>​ 下标；</li>
+<li>将 <code>index</code>​ 通过 <code>response</code>​ 返回。</li>
+</ol>
+<p>​<code>/frameworks/av/media/libstagefright/MediaCodec.cpp</code>​</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#66d9ef">bool</span> MediaCodec<span style="color:#f92672">::</span>handleDequeueInputBuffer(<span style="color:#66d9ef">const</span> sp<span style="color:#f92672">&lt;</span>AReplyToken<span style="color:#f92672">&gt;</span> <span style="color:#f92672">&amp;</span>replyID, <span style="color:#66d9ef">bool</span> newRequest) {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>isExecuting() <span style="color:#f92672">||</span> (mFlags <span style="color:#f92672">&amp;</span> kFlagIsAsync)
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">||</span> (newRequest <span style="color:#f92672">&amp;&amp;</span> (mFlags <span style="color:#f92672">&amp;</span> kFlagDequeueInputPending))) {
+</span></span><span style="display:flex;"><span>        PostReplyWithError(replyID, INVALID_OPERATION);
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> true;
+</span></span><span style="display:flex;"><span>    } <span style="color:#66d9ef">else</span> <span style="color:#a6e22e">if</span> (mFlags <span style="color:#f92672">&amp;</span> kFlagStickyError) {
+</span></span><span style="display:flex;"><span>        PostReplyWithError(replyID, getStickyError());
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> true;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    ssize_t index <span style="color:#f92672">=</span> dequeuePortBuffer(kPortIndexInput);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (index <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">0</span>) {
+</span></span><span style="display:flex;"><span>        CHECK_EQ(index, <span style="color:#f92672">-</span>EAGAIN);
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> false;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    sp<span style="color:#f92672">&lt;</span>AMessage<span style="color:#f92672">&gt;</span> response <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> AMessage;
+</span></span><span style="display:flex;"><span>    response<span style="color:#f92672">-&gt;</span>setSize(<span style="color:#e6db74">&#34;index&#34;</span>, index);
+</span></span><span style="display:flex;"><span>    response<span style="color:#f92672">-&gt;</span>postReply(replyID);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> true;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h3 id="33-getinputbuffer">3、3 getInputBuffer<a hidden class="anchor" aria-hidden="true" href="#33-getinputbuffer">#</a></h3>
+<p>通过 <code>getInputBuffer</code>​​ 获取该索引对应的缓冲区,往缓冲区写入数据。</p>
+<p>​<code>/frameworks/base/media/jni/android_media_MediaCodec.cpp</code>​</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#66d9ef">static</span> jobject <span style="color:#a6e22e">android_media_MediaCodec_getBuffer</span>(
+</span></span><span style="display:flex;"><span>        JNIEnv <span style="color:#f92672">*</span>env, jobject thiz, jboolean input, jint index) {
+</span></span><span style="display:flex;"><span>    ALOGV(<span style="color:#e6db74">&#34;android_media_MediaCodec_getBuffer&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    sp<span style="color:#f92672">&lt;</span>JMediaCodec<span style="color:#f92672">&gt;</span> codec <span style="color:#f92672">=</span> getMediaCodec(env, thiz);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (codec <span style="color:#f92672">==</span> NULL <span style="color:#f92672">||</span> codec<span style="color:#f92672">-&gt;</span>initCheck() <span style="color:#f92672">!=</span> OK) {
+</span></span><span style="display:flex;"><span>        throwExceptionAsNecessary(env, INVALID_OPERATION);
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> NULL;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    jobject buffer;
+</span></span><span style="display:flex;"><span>    status_t err <span style="color:#f92672">=</span> codec<span style="color:#f92672">-&gt;</span>getBuffer(env, input, index, <span style="color:#f92672">&amp;</span>buffer);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (err <span style="color:#f92672">==</span> OK) {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> buffer;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// if we&#39;re out of memory, an exception was already thrown
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> (err <span style="color:#f92672">!=</span> NO_MEMORY) {
+</span></span><span style="display:flex;"><span>        throwExceptionAsNecessary(env, err);
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> NULL;
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>status_t JMediaCodec<span style="color:#f92672">::</span>getBuffer(
+</span></span><span style="display:flex;"><span>        JNIEnv <span style="color:#f92672">*</span>env, <span style="color:#66d9ef">bool</span> input, size_t index, jobject <span style="color:#f92672">*</span>buf) <span style="color:#66d9ef">const</span> {
+</span></span><span style="display:flex;"><span>    sp<span style="color:#f92672">&lt;</span>MediaCodecBuffer<span style="color:#f92672">&gt;</span> buffer;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    status_t err <span style="color:#f92672">=</span>
+</span></span><span style="display:flex;"><span>        input
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">?</span> mCodec<span style="color:#f92672">-&gt;</span>getInputBuffer(index, <span style="color:#f92672">&amp;</span>buffer)
+</span></span><span style="display:flex;"><span>            <span style="color:#f92672">:</span> mCodec<span style="color:#f92672">-&gt;</span>getOutputBuffer(index, <span style="color:#f92672">&amp;</span>buffer);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (err <span style="color:#f92672">!=</span> OK) {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> err;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">createByteBufferFromABuffer</span>(
+</span></span><span style="display:flex;"><span>            env, <span style="color:#f92672">!</span>input <span style="color:#75715e">/* readOnly */</span>, input <span style="color:#75715e">/* clearBuffer */</span>, buffer, buf);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><ol>
+<li>调用 <code>MediaCodec.cpp</code>​ 中 <code>getInputBuffer</code>​ 函数，获取 <code>id</code>​ 对应 <code>buffer</code>​;</li>
+<li>通过 <code>MediaCodecBuffer</code>​ 创建 <code>ByteBuffer</code>​,实现 <code>java</code>​ 和 <code>native</code>​ 共享内存；</li>
+<li>返回 <code>ByteBuffer</code>​；</li>
+</ol>
+<p>​<code>/frameworks/av/media/libstagefright/MediaCodec.cpp</code>​</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>status_t MediaCodec<span style="color:#f92672">::</span>getInputBuffer(size_t index, sp<span style="color:#f92672">&lt;</span>MediaCodecBuffer<span style="color:#f92672">&gt;</span> <span style="color:#f92672">*</span>buffer) {
+</span></span><span style="display:flex;"><span>    sp<span style="color:#f92672">&lt;</span>AMessage<span style="color:#f92672">&gt;</span> format;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">getBufferAndFormat</span>(kPortIndexInput, index, buffer, <span style="color:#f92672">&amp;</span>format);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>通过 <code>getBufferAndFormat</code>​ 获取缓冲区格式。</p>
+<ol>
+<li>​<code>mPortBuffers</code>​ 通过 <code>index</code>​ 区分输入输出，这里获取所有输入<code>BufferInfo</code>​；</li>
+<li>通过下标获取指定的 <code>BufferInfo</code>​；</li>
+<li>将 <code>buffer</code>​ 指针指向 <code>BufferInfo</code>​ 的 <code>mData</code>​.</li>
+</ol>
+<p>​<code>/frameworks/av/media/libstagefright/MediaCodec.cpp</code>​</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>status_t MediaCodec<span style="color:#f92672">::</span>getBufferAndFormat(
+</span></span><span style="display:flex;"><span>        size_t portIndex, size_t index,
+</span></span><span style="display:flex;"><span>        sp<span style="color:#f92672">&lt;</span>MediaCodecBuffer<span style="color:#f92672">&gt;</span> <span style="color:#f92672">*</span>buffer, sp<span style="color:#f92672">&lt;</span>AMessage<span style="color:#f92672">&gt;</span> <span style="color:#f92672">*</span>format) {
+</span></span><span style="display:flex;"><span>   
+</span></span><span style="display:flex;"><span>	......
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// we do not want mPortBuffers to change during this section
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#75715e">// we also don&#39;t want mOwnedByClient to change during this
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    Mutex<span style="color:#f92672">::</span>Autolock al(mBufferLock);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    std<span style="color:#f92672">::</span>vector<span style="color:#f92672">&lt;</span>BufferInfo<span style="color:#f92672">&gt;</span> <span style="color:#f92672">&amp;</span>buffers <span style="color:#f92672">=</span> mPortBuffers[portIndex];
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (index <span style="color:#f92672">&gt;=</span> buffers.size()) {
+</span></span><span style="display:flex;"><span>        ALOGE(<span style="color:#e6db74">&#34;getBufferAndFormat - trying to get buffer with &#34;</span>
+</span></span><span style="display:flex;"><span>              <span style="color:#e6db74">&#34;bad index (index=%zu buffer_size=%zu)&#34;</span>, index, buffers.size());
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> INVALID_OPERATION;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">const</span> BufferInfo <span style="color:#f92672">&amp;</span>info <span style="color:#f92672">=</span> buffers[index];
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>info.mOwnedByClient) {
+</span></span><span style="display:flex;"><span>        ALOGE(<span style="color:#e6db74">&#34;getBufferAndFormat - invalid operation &#34;</span>
+</span></span><span style="display:flex;"><span>              <span style="color:#e6db74">&#34;(the index %zu is not owned by client)&#34;</span>, index);
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> INVALID_OPERATION;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">*</span>buffer <span style="color:#f92672">=</span> info.mData;
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">*</span>format <span style="color:#f92672">=</span> info.mData<span style="color:#f92672">-&gt;</span>format();
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> OK;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h3 id="34-queueinputbuffer">3、4 queueInputBuffer<a hidden class="anchor" aria-hidden="true" href="#34-queueinputbuffer">#</a></h3>
+<p>最后使用 <code>queueInputBuffer</code>​ 将缓冲区提交给解码器进行处理。</p>
+<p>​<code>jni</code>​ 方法 <code>android_media_MediaCodec_queueInputBuffer</code>​ 获取 <code>JMediaCodec</code>​,调用其 <code>queueInputBuffer</code>​，然后调用 <code>MediaCodec</code>​ 的 <code>queueInputBuffer</code>​ 函数</p>
+<p>​<code>/frameworks/base/media/jni/android_media_MediaCodec.cpp</code>​</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#66d9ef">static</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">android_media_MediaCodec_queueInputBuffer</span>(
+</span></span><span style="display:flex;"><span>        JNIEnv <span style="color:#f92672">*</span>env,
+</span></span><span style="display:flex;"><span>        jobject thiz,
+</span></span><span style="display:flex;"><span>        jint index,
+</span></span><span style="display:flex;"><span>        jint offset,
+</span></span><span style="display:flex;"><span>        jint size,
+</span></span><span style="display:flex;"><span>        jlong timestampUs,
+</span></span><span style="display:flex;"><span>        jint flags) {
+</span></span><span style="display:flex;"><span>    ALOGV(<span style="color:#e6db74">&#34;android_media_MediaCodec_queueInputBuffer&#34;</span>);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    sp<span style="color:#f92672">&lt;</span>JMediaCodec<span style="color:#f92672">&gt;</span> codec <span style="color:#f92672">=</span> getMediaCodec(env, thiz);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (codec <span style="color:#f92672">==</span> NULL <span style="color:#f92672">||</span> codec<span style="color:#f92672">-&gt;</span>initCheck() <span style="color:#f92672">!=</span> OK) {
+</span></span><span style="display:flex;"><span>        throwExceptionAsNecessary(env, INVALID_OPERATION);
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span>;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    AString errorDetailMsg;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    status_t err <span style="color:#f92672">=</span> codec<span style="color:#f92672">-&gt;</span>queueInputBuffer(
+</span></span><span style="display:flex;"><span>            index, offset, size, timestampUs, flags, <span style="color:#f92672">&amp;</span>errorDetailMsg);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    throwExceptionAsNecessary(
+</span></span><span style="display:flex;"><span>            env, err, ACTION_CODE_FATAL, errorDetailMsg.empty() <span style="color:#f92672">?</span> NULL <span style="color:#f92672">:</span> errorDetailMsg.c_str());
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>status_t JMediaCodec<span style="color:#f92672">::</span>queueInputBuffer(
+</span></span><span style="display:flex;"><span>        size_t index,
+</span></span><span style="display:flex;"><span>        size_t offset, size_t size, <span style="color:#66d9ef">int64_t</span> timeUs, <span style="color:#66d9ef">uint32_t</span> flags,
+</span></span><span style="display:flex;"><span>        AString <span style="color:#f92672">*</span>errorDetailMsg) {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> mCodec<span style="color:#f92672">-&gt;</span>queueInputBuffer(
+</span></span><span style="display:flex;"><span>            index, offset, size, timeUs, flags, errorDetailMsg);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>​<code>/frameworks/av/media/libstagefright/MediaCodec.cpp</code>​</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>status_t MediaCodec<span style="color:#f92672">::</span>queueInputBuffer(
+</span></span><span style="display:flex;"><span>        size_t index,
+</span></span><span style="display:flex;"><span>        size_t offset,
+</span></span><span style="display:flex;"><span>        size_t size,
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">int64_t</span> presentationTimeUs,
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">uint32_t</span> flags,
+</span></span><span style="display:flex;"><span>        AString <span style="color:#f92672">*</span>errorDetailMsg) {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (errorDetailMsg <span style="color:#f92672">!=</span> NULL) {
+</span></span><span style="display:flex;"><span>        errorDetailMsg<span style="color:#f92672">-&gt;</span>clear();
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    sp<span style="color:#f92672">&lt;</span>AMessage<span style="color:#f92672">&gt;</span> msg <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> AMessage(kWhatQueueInputBuffer, <span style="color:#66d9ef">this</span>);
+</span></span><span style="display:flex;"><span>    msg<span style="color:#f92672">-&gt;</span>setSize(<span style="color:#e6db74">&#34;index&#34;</span>, index);
+</span></span><span style="display:flex;"><span>    msg<span style="color:#f92672">-&gt;</span>setSize(<span style="color:#e6db74">&#34;offset&#34;</span>, offset);
+</span></span><span style="display:flex;"><span>    msg<span style="color:#f92672">-&gt;</span>setSize(<span style="color:#e6db74">&#34;size&#34;</span>, size);
+</span></span><span style="display:flex;"><span>    msg<span style="color:#f92672">-&gt;</span>setInt64(<span style="color:#e6db74">&#34;timeUs&#34;</span>, presentationTimeUs);
+</span></span><span style="display:flex;"><span>    msg<span style="color:#f92672">-&gt;</span>setInt32(<span style="color:#e6db74">&#34;flags&#34;</span>, flags);
+</span></span><span style="display:flex;"><span>    msg<span style="color:#f92672">-&gt;</span>setPointer(<span style="color:#e6db74">&#34;errorDetailMsg&#34;</span>, errorDetailMsg);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    sp<span style="color:#f92672">&lt;</span>AMessage<span style="color:#f92672">&gt;</span> response;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">PostAndAwaitResponse</span>(msg, <span style="color:#f92672">&amp;</span>response);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>​<code>onMessageReceived</code>​ 接收消息 <code>kWhatQueueInputBuffer</code>​，调用 <code>onQueueInputBuffer</code>​ 函数</p>
+<p>​<code>/frameworks/av/media/libstagefright/MediaCodec.cpp</code>​</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#66d9ef">void</span> MediaCodec<span style="color:#f92672">::</span>onMessageReceived(<span style="color:#66d9ef">const</span> sp<span style="color:#f92672">&lt;</span>AMessage<span style="color:#f92672">&gt;</span> <span style="color:#f92672">&amp;</span>msg) {
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">switch</span> (msg<span style="color:#f92672">-&gt;</span>what()) {
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>		......
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">case</span> kWhatQueueInputBuffer:
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            ......
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            status_t err <span style="color:#f92672">=</span> UNKNOWN_ERROR;
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>mLeftover.empty()) {
+</span></span><span style="display:flex;"><span>                mLeftover.push_back(msg);
+</span></span><span style="display:flex;"><span>                size_t index;
+</span></span><span style="display:flex;"><span>                msg<span style="color:#f92672">-&gt;</span>findSize(<span style="color:#e6db74">&#34;index&#34;</span>, <span style="color:#f92672">&amp;</span>index);
+</span></span><span style="display:flex;"><span>                err <span style="color:#f92672">=</span> handleLeftover(index);
+</span></span><span style="display:flex;"><span>            } <span style="color:#66d9ef">else</span> {
+</span></span><span style="display:flex;"><span>                err <span style="color:#f92672">=</span> onQueueInputBuffer(msg);
+</span></span><span style="display:flex;"><span>            }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>            PostReplyWithError(replyID, err);
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">break</span>;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>		......
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>​<code>/frameworks/av/media/libstagefright/MediaCodec.cpp</code>​</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>status_t MediaCodec<span style="color:#f92672">::</span>onQueueInputBuffer(<span style="color:#66d9ef">const</span> sp<span style="color:#f92672">&lt;</span>AMessage<span style="color:#f92672">&gt;</span> <span style="color:#f92672">&amp;</span>msg) {
+</span></span><span style="display:flex;"><span>  
+</span></span><span style="display:flex;"><span>	......
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    status_t err <span style="color:#f92672">=</span> OK;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (hasCryptoOrDescrambler() <span style="color:#f92672">&amp;&amp;</span> <span style="color:#f92672">!</span>c2Buffer <span style="color:#f92672">&amp;&amp;</span> <span style="color:#f92672">!</span>memory) {
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>		......
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    } <span style="color:#66d9ef">else</span> {
+</span></span><span style="display:flex;"><span>        err <span style="color:#f92672">=</span> mBufferChannel<span style="color:#f92672">-&gt;</span>queueInputBuffer(buffer);
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">if</span> (err <span style="color:#f92672">!=</span> OK) {
+</span></span><span style="display:flex;"><span>            mediametrics_setInt32(mMetricsHandle, kCodecQueueInputBufferError, err);
+</span></span><span style="display:flex;"><span>            ALOGW(<span style="color:#e6db74">&#34;Log queueInputBuffer error: %d&#34;</span>, err);
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    ......
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> err;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>调用 <code>ACodecBufferChannel</code>​ 的 <code>queueInputBuffer</code>​函数</p>
+<p>​<code>/frameworks/av/media/libstagefright/ACodecBufferChannel.cpp</code>​</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>status_t ACodecBufferChannel<span style="color:#f92672">::</span>queueInputBuffer(<span style="color:#66d9ef">const</span> sp<span style="color:#f92672">&lt;</span>MediaCodecBuffer<span style="color:#f92672">&gt;</span> <span style="color:#f92672">&amp;</span>buffer) {
+</span></span><span style="display:flex;"><span>    std<span style="color:#f92672">::</span>shared_ptr<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">const</span> std<span style="color:#f92672">::</span>vector<span style="color:#f92672">&lt;</span><span style="color:#66d9ef">const</span> BufferInfo<span style="color:#f92672">&gt;&gt;</span> array(
+</span></span><span style="display:flex;"><span>            std<span style="color:#f92672">::</span>atomic_load(<span style="color:#f92672">&amp;</span>mInputBuffers));
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	......  
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    ALOGV(<span style="color:#e6db74">&#34;queueInputBuffer #%d&#34;</span>, it<span style="color:#f92672">-&gt;</span>mBufferId);
+</span></span><span style="display:flex;"><span>    sp<span style="color:#f92672">&lt;</span>AMessage<span style="color:#f92672">&gt;</span> msg <span style="color:#f92672">=</span> mInputBufferFilled<span style="color:#f92672">-&gt;</span>dup();
+</span></span><span style="display:flex;"><span>    msg<span style="color:#f92672">-&gt;</span>setObject(<span style="color:#e6db74">&#34;buffer&#34;</span>, it<span style="color:#f92672">-&gt;</span>mCodecBuffer);
+</span></span><span style="display:flex;"><span>    msg<span style="color:#f92672">-&gt;</span>setInt32(<span style="color:#e6db74">&#34;buffer-id&#34;</span>, it<span style="color:#f92672">-&gt;</span>mBufferId);
+</span></span><span style="display:flex;"><span>    msg<span style="color:#f92672">-&gt;</span>post();
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> OK;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>​<code>ACodec</code>​ 接收到 <code>kWhatInputBufferFilled</code>​ 信息后续</p>
+<p>​<code>/frameworks/av/media/libstagefright/ACodec.cpp</code>​</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>std<span style="color:#f92672">::</span>shared_ptr<span style="color:#f92672">&lt;</span>BufferChannelBase<span style="color:#f92672">&gt;</span> ACodec<span style="color:#f92672">::</span>getBufferChannel() {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> (<span style="color:#f92672">!</span>mBufferChannel) {
+</span></span><span style="display:flex;"><span>        mBufferChannel <span style="color:#f92672">=</span> std<span style="color:#f92672">::</span>make_shared<span style="color:#f92672">&lt;</span>ACodecBufferChannel<span style="color:#f92672">&gt;</span>(
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">new</span> AMessage(kWhatInputBufferFilled, <span style="color:#66d9ef">this</span>),
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">new</span> AMessage(kWhatOutputBufferDrained, <span style="color:#66d9ef">this</span>));
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> mBufferChannel;
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">bool</span> ACodec<span style="color:#f92672">::</span>BaseState<span style="color:#f92672">::</span>onMessageReceived(<span style="color:#66d9ef">const</span> sp<span style="color:#f92672">&lt;</span>AMessage<span style="color:#f92672">&gt;</span> <span style="color:#f92672">&amp;</span>msg) {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">switch</span> (msg<span style="color:#f92672">-&gt;</span>what()) {
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">case</span> kWhatInputBufferFilled:
+</span></span><span style="display:flex;"><span>        {
+</span></span><span style="display:flex;"><span>            onInputBufferFilled(msg);
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">break</span>;
+</span></span><span style="display:flex;"><span>        }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>		......
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>​<code>ACodec</code>​ 通知 <code>OMX</code>​ ,写入数据。</p>
+<p>​<code>output</code>​ 数据获取流程和 <code>input</code>​ 流程大致上都相似，这里就不在细说了。</p>
+<p>‍</p>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+    </ul>
+
+
+<ul class="share-buttons">
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share MediaCodec on x"
+            href="https://x.com/intent/tweet/?text=MediaCodec&amp;url=https%3a%2f%2fhzer0k.github.io%2fmultimedia%2fmediacodec%2f&amp;hashtags=">
+            <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M512 62.554 L 512 449.446 C 512 483.97 483.97 512 449.446 512 L 62.554 512 C 28.03 512 0 483.97 0 449.446 L 0 62.554 C 0 28.03 28.029 0 62.554 0 L 449.446 0 C 483.971 0 512 28.03 512 62.554 Z M 269.951 190.75 L 182.567 75.216 L 56 75.216 L 207.216 272.95 L 63.9 436.783 L 125.266 436.783 L 235.9 310.383 L 332.567 436.783 L 456 436.783 L 298.367 228.367 L 432.367 75.216 L 371.033 75.216 Z M 127.633 110 L 164.101 110 L 383.481 400.065 L 349.5 400.065 Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share MediaCodec on linkedin"
+            href="https://www.linkedin.com/shareArticle?mini=true&amp;url=https%3a%2f%2fhzer0k.github.io%2fmultimedia%2fmediacodec%2f&amp;title=MediaCodec&amp;summary=MediaCodec&amp;source=https%3a%2f%2fhzer0k.github.io%2fmultimedia%2fmediacodec%2f">
+            <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-288.985,423.278l0,-225.717l-75.04,0l0,225.717l75.04,0Zm270.539,0l0,-129.439c0,-69.333 -37.018,-101.586 -86.381,-101.586c-39.804,0 -57.634,21.891 -67.617,37.266l0,-31.958l-75.021,0c0.995,21.181 0,225.717 0,225.717l75.02,0l0,-126.056c0,-6.748 0.486,-13.492 2.474,-18.315c5.414,-13.475 17.767,-27.434 38.494,-27.434c27.135,0 38.007,20.707 38.007,51.037l0,120.768l75.024,0Zm-307.552,-334.556c-25.674,0 -42.448,16.879 -42.448,39.002c0,21.658 16.264,39.002 41.455,39.002l0.484,0c26.165,0 42.452,-17.344 42.452,-39.002c-0.485,-22.092 -16.241,-38.954 -41.943,-39.002Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share MediaCodec on reddit"
+            href="https://reddit.com/submit?url=https%3a%2f%2fhzer0k.github.io%2fmultimedia%2fmediacodec%2f&title=MediaCodec">
+            <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-3.446,265.638c0,-22.964 -18.616,-41.58 -41.58,-41.58c-11.211,0 -21.361,4.457 -28.841,11.666c-28.424,-20.508 -67.586,-33.757 -111.204,-35.278l18.941,-89.121l61.884,13.157c0.756,15.734 13.642,28.29 29.56,28.29c16.407,0 29.706,-13.299 29.706,-29.701c0,-16.403 -13.299,-29.702 -29.706,-29.702c-11.666,0 -21.657,6.792 -26.515,16.578l-69.105,-14.69c-1.922,-0.418 -3.939,-0.042 -5.585,1.036c-1.658,1.073 -2.811,2.761 -3.224,4.686l-21.152,99.438c-44.258,1.228 -84.046,14.494 -112.837,35.232c-7.468,-7.164 -17.589,-11.591 -28.757,-11.591c-22.965,0 -41.585,18.616 -41.585,41.58c0,16.896 10.095,31.41 24.568,37.918c-0.639,4.135 -0.99,8.328 -0.99,12.576c0,63.977 74.469,115.836 166.33,115.836c91.861,0 166.334,-51.859 166.334,-115.836c0,-4.218 -0.347,-8.387 -0.977,-12.493c14.564,-6.47 24.735,-21.034 24.735,-38.001Zm-119.474,108.193c-20.27,20.241 -59.115,21.816 -70.534,21.816c-11.428,0 -50.277,-1.575 -70.522,-21.82c-3.007,-3.008 -3.007,-7.882 0,-10.889c3.003,-2.999 7.882,-3.003 10.885,0c12.777,12.781 40.11,17.317 59.637,17.317c19.522,0 46.86,-4.536 59.657,-17.321c3.016,-2.999 7.886,-2.995 10.885,0.008c3.008,3.011 3.003,7.882 -0.008,10.889Zm-5.23,-48.781c-16.373,0 -29.701,-13.324 -29.701,-29.698c0,-16.381 13.328,-29.714 29.701,-29.714c16.378,0 29.706,13.333 29.706,29.714c0,16.374 -13.328,29.698 -29.706,29.698Zm-160.386,-29.702c0,-16.381 13.328,-29.71 29.714,-29.71c16.369,0 29.689,13.329 29.689,29.71c0,16.373 -13.32,29.693 -29.689,29.693c-16.386,0 -29.714,-13.32 -29.714,-29.693Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share MediaCodec on facebook"
+            href="https://facebook.com/sharer/sharer.php?u=https%3a%2f%2fhzer0k.github.io%2fmultimedia%2fmediacodec%2f">
+            <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-106.468,0l0,-192.915l66.6,0l12.672,-82.621l-79.272,0l0,-53.617c0,-22.603 11.073,-44.636 46.58,-44.636l36.042,0l0,-70.34c0,0 -32.71,-5.582 -63.982,-5.582c-65.288,0 -107.96,39.569 -107.96,111.204l0,62.971l-72.573,0l0,82.621l72.573,0l0,192.915l-191.104,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share MediaCodec on whatsapp"
+            href="https://api.whatsapp.com/send?text=MediaCodec%20-%20https%3a%2f%2fhzer0k.github.io%2fmultimedia%2fmediacodec%2f">
+            <svg version="1.1" viewBox="0 0 512 512" xml:space="preserve" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M449.446,0c34.525,0 62.554,28.03 62.554,62.554l0,386.892c0,34.524 -28.03,62.554 -62.554,62.554l-386.892,0c-34.524,0 -62.554,-28.03 -62.554,-62.554l0,-386.892c0,-34.524 28.029,-62.554 62.554,-62.554l386.892,0Zm-58.673,127.703c-33.842,-33.881 -78.847,-52.548 -126.798,-52.568c-98.799,0 -179.21,80.405 -179.249,179.234c-0.013,31.593 8.241,62.428 23.927,89.612l-25.429,92.884l95.021,-24.925c26.181,14.28 55.659,21.807 85.658,21.816l0.074,0c98.789,0 179.206,-80.413 179.247,-179.243c0.018,-47.895 -18.61,-92.93 -52.451,-126.81Zm-126.797,275.782l-0.06,0c-26.734,-0.01 -52.954,-7.193 -75.828,-20.767l-5.441,-3.229l-56.386,14.792l15.05,-54.977l-3.542,-5.637c-14.913,-23.72 -22.791,-51.136 -22.779,-79.287c0.033,-82.142 66.867,-148.971 149.046,-148.971c39.793,0.014 77.199,15.531 105.329,43.692c28.128,28.16 43.609,65.592 43.594,105.4c-0.034,82.149 -66.866,148.983 -148.983,148.984Zm81.721,-111.581c-4.479,-2.242 -26.499,-13.075 -30.604,-14.571c-4.105,-1.495 -7.091,-2.241 -10.077,2.241c-2.986,4.483 -11.569,14.572 -14.182,17.562c-2.612,2.988 -5.225,3.364 -9.703,1.12c-4.479,-2.241 -18.91,-6.97 -36.017,-22.23c-13.314,-11.876 -22.304,-26.542 -24.916,-31.026c-2.612,-4.484 -0.279,-6.908 1.963,-9.14c2.016,-2.007 4.48,-5.232 6.719,-7.847c2.24,-2.615 2.986,-4.484 4.479,-7.472c1.493,-2.99 0.747,-5.604 -0.374,-7.846c-1.119,-2.241 -10.077,-24.288 -13.809,-33.256c-3.635,-8.733 -7.327,-7.55 -10.077,-7.688c-2.609,-0.13 -5.598,-0.158 -8.583,-0.158c-2.986,0 -7.839,1.121 -11.944,5.604c-4.105,4.484 -15.675,15.32 -15.675,37.364c0,22.046 16.048,43.342 18.287,46.332c2.24,2.99 31.582,48.227 76.511,67.627c10.685,4.615 19.028,7.371 25.533,9.434c10.728,3.41 20.492,2.929 28.209,1.775c8.605,-1.285 26.499,-10.833 30.231,-21.295c3.732,-10.464 3.732,-19.431 2.612,-21.298c-1.119,-1.869 -4.105,-2.99 -8.583,-5.232Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share MediaCodec on telegram"
+            href="https://telegram.me/share/url?text=MediaCodec&amp;url=https%3a%2f%2fhzer0k.github.io%2fmultimedia%2fmediacodec%2f">
+            <svg version="1.1" xml:space="preserve" viewBox="2 2 28 28" height="30px" width="30px" fill="currentColor">
+                <path
+                    d="M26.49,29.86H5.5a3.37,3.37,0,0,1-2.47-1,3.35,3.35,0,0,1-1-2.47V5.48A3.36,3.36,0,0,1,3,3,3.37,3.37,0,0,1,5.5,2h21A3.38,3.38,0,0,1,29,3a3.36,3.36,0,0,1,1,2.46V26.37a3.35,3.35,0,0,1-1,2.47A3.38,3.38,0,0,1,26.49,29.86Zm-5.38-6.71a.79.79,0,0,0,.85-.66L24.73,9.24a.55.55,0,0,0-.18-.46.62.62,0,0,0-.41-.17q-.08,0-16.53,6.11a.59.59,0,0,0-.41.59.57.57,0,0,0,.43.52l4,1.24,1.61,4.83a.62.62,0,0,0,.63.43.56.56,0,0,0,.4-.17L16.54,20l4.09,3A.9.9,0,0,0,21.11,23.15ZM13.8,20.71l-1.21-4q8.72-5.55,8.78-5.55c.15,0,.23,0,.23.16a.18.18,0,0,1,0,.06s-2.51,2.3-7.52,6.8Z" />
+            </svg>
+        </a>
+    </li>
+    <li>
+        <a target="_blank" rel="noopener noreferrer" aria-label="share MediaCodec on ycombinator"
+            href="https://news.ycombinator.com/submitlink?t=MediaCodec&u=https%3a%2f%2fhzer0k.github.io%2fmultimedia%2fmediacodec%2f">
+            <svg version="1.1" xml:space="preserve" width="30px" height="30px" viewBox="0 0 512 512" fill="currentColor"
+                xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape">
+                <path
+                    d="M449.446 0C483.971 0 512 28.03 512 62.554L512 449.446C512 483.97 483.97 512 449.446 512L62.554 512C28.03 512 0 483.97 0 449.446L0 62.554C0 28.03 28.029 0 62.554 0L449.446 0ZM183.8767 87.9921H121.8427L230.6673 292.4508V424.0079H281.3328V292.4508L390.1575 87.9921H328.1233L256 238.2489z" />
+            </svg>
+        </a>
+    </li>
+</ul>
+
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+    <span>&copy; 2024 <a href="https://hzer0k.github.io">zerok</a></span>
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+</body>
+
+</html>

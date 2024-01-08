@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Multimedia on zerok</title>
+    <link>https://hzer0k.github.io/multimedia/</link>
+    <description>Recent content in Multimedia on zerok</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-cn</language>
+    <lastBuildDate>Sun, 07 Jan 2024 14:38:19 +0800</lastBuildDate>
+    <atom:link href="https://hzer0k.github.io/multimedia/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>MediaCodec</title>
+      <link>https://hzer0k.github.io/multimedia/mediacodec/</link>
+      <pubDate>Sun, 07 Jan 2024 14:38:19 +0800</pubDate>
+      <guid>https://hzer0k.github.io/multimedia/mediacodec/</guid>
+      <description>MediaCodec视频播放流程介绍 1、MediaCodec介绍 MediaCodec 是 Android 平台提供的一个底层的音视频编解码框架，它是 Android 多媒体基础框架的重要组成部分。它经常和 MediaExtractor​​ 、MediaSync​​ 、 MediaMuxer​​ 、 MediaCrypto​​ 、 MediaDrm​​、 Image​​ 、 Surface​​ 、 Auditrack​​ 一起使用。它本身并不是 Codec，而是通过调用底层编解码组件获得Codec的能力。
+自 Android 5.0 开始，mediacodec 首选异步模式处理数据。
+当 MediaCodec 异步处理数据时，会使用一组输入和输出 Buffer 队列。通常，客户端请求将数据写入空的输入缓冲区，输入 Buffer 填满数据后，发送给 MediaCodec 进行编解码处理。之后，处理完的数据将被写到一个输出 Buffer 中。最后，由客户请求输出 Buffer，消耗输出 Buffer 中的内容，用完之后释放。
+在其生命周期中，编解码器在概念上存在于三种状态之一：Stopped, Executing 或者 Released。Stopped 状态实际上是三个状态的集合：Uninitialized, Configured 和 Error，而 Executing 状态在概念上通过三个子状态进行：Flushed, Running 和 End-of-Stream。
+2、MediaCodec视频播放流程 2、1 start流程 MediaCodecDemo
+package io.vec.demo.mediacodec; import java.nio.ByteBuffer; import android.app.Activity; import android.media.MediaCodec; import android.media.MediaCodec.BufferInfo; import android.</description>
+    </item>
+  </channel>
+</rss>
