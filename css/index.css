@@ -24040,7 +24040,7 @@ body[data-type="room"] #page .page-title {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  user-select: none;
+  user-select: text;
   transform-style: preserve-3d;
   -webkit-tap-highlight-color: transparent;
 }
