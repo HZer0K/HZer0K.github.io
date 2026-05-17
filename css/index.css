@@ -2829,10 +2829,6 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Lato, Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif;
   line-height: 2;
   -webkit-tap-highlight-color: rgba(0,0,0,0);
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
 }
 *::-webkit-scrollbar {
   width: 6px;
@@ -20130,7 +20126,6 @@ html.hide-aside .layout > div:first-child {
   cursor: pointer;
   border: var(--style-border);
   box-shadow: var(--anzhiyu-shadow-border);
-  user-select: none;
 }
 /* 移动端容器padding */
 @media screen and (max-width: 768px) {
