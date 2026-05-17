@@ -21363,7 +21363,7 @@ body:has(#console.show) #nav-music .aplayer .aplayer-info .aplayer-music .aplaye
   overflow: hidden;
   text-overflow: ellipsis;
   transition: 0.3s;
-  user-select: none;
+  user-select: text;
   margin-right: 3px;
 }
 body:has(#console.show) #nav-music .aplayer .aplayer-info .aplayer-controller {
