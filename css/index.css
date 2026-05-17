@@ -19911,7 +19911,6 @@ body[data-type="album_detail"] #page .author-content-item .card-content .banner-
   color: var(--anzhiyu-white);
   transition: 0.3s;
   z-index: 1;
-  user-select: none;
 }
 
 /* 处理单页背景 */
@@ -20732,7 +20731,6 @@ details.folding-tag > summary {
   border-radius: 14px !important;
   box-shadow: var(--anzhiyu-shadow-border);
   color: var(--font-color) !important;
-  user-select: none;
 }
 details.folding-tag > summary::marker {
   color: var(--anzhiyu-main);
@@ -21363,7 +21361,6 @@ body:has(#console.show) #nav-music .aplayer .aplayer-info .aplayer-music .aplaye
   overflow: hidden;
   text-overflow: ellipsis;
   transition: 0.3s;
-  user-select: text;
   margin-right: 3px;
 }
 body:has(#console.show) #nav-music .aplayer .aplayer-info .aplayer-controller {
@@ -22526,7 +22523,6 @@ i.bber-gotobb {
   overflow: hidden;
   text-overflow: ellipsis;
   transition: 0.3s;
-  user-select: none;
 }
 
 #nav-music .aplayer .aplayer-info .aplayer-controller {
@@ -23651,7 +23647,6 @@ div#swiper_container:hover {
   display: flex !important;
   justify-content: space-around;
   flex-direction: row !important;
-  user-select: none;
 }
 
 .todayCard-title,
@@ -24040,7 +24035,6 @@ body[data-type="room"] #page .page-title {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  user-select: text;
   transform-style: preserve-3d;
   -webkit-tap-highlight-color: transparent;
 }
